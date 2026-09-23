@@ -1,9 +1,14 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
-    <main className="flex flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 bg-zinc-50 font-sans dark:bg-black">
       <h1 className="text-5xl font-semibold tracking-tight text-black dark:text-zinc-50">
         Hello World
       </h1>
+      <Link href="/jokes" className="text-lg text-blue-600 hover:underline">
+        View jokes &rarr;
+      </Link>
     </main>
   );
 }
