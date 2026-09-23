@@ -6,8 +6,8 @@ export default function Home() {
       <h1 className="text-5xl font-semibold tracking-tight text-black dark:text-zinc-50">
         Hello World
       </h1>
-      <Link href="/jokes" className="text-lg text-blue-600 hover:underline">
-        View jokes &rarr;
+      <Link href="/memes" className="text-lg text-blue-600 hover:underline">
+        View memes &rarr;
       </Link>
     </main>
   );
