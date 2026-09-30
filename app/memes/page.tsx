@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { MemeCard } from "@/components/meme-card";
+import { getSupabase } from "@/lib/supabase/anon";
 
 type Meme = {
   id: number;
@@ -9,9 +10,6 @@ type Meme = {
   top_text: string | null;
   bottom_text: string | null;
 };
-
-const captionClass =
-  "absolute inset-x-2 text-center font-black uppercase leading-tight text-white text-2xl [text-shadow:_2px_2px_0_#000,_-2px_-2px_0_#000,_2px_-2px_0_#000,_-2px_2px_0_#000]";
 
 export default async function MemesPage() {
   await connection();
@@ -34,20 +32,13 @@ export default async function MemesPage() {
       ) : (
         <ul className="mt-8 grid gap-6 sm:grid-cols-2">
           {(memes as Meme[]).map((meme) => (
-            <li
+            <MemeCard
               key={meme.id}
-              className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800"
-            >
-              <div className="relative bg-black">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={meme.image_url} alt={meme.title} className="w-full" />
-                {meme.top_text && <p className={`${captionClass} top-2`}>{meme.top_text}</p>}
-                {meme.bottom_text && (
-                  <p className={`${captionClass} bottom-2`}>{meme.bottom_text}</p>
-                )}
-              </div>
-              <p className="p-3 font-medium">{meme.title}</p>
-            </li>
+              title={meme.title}
+              imageUrl={meme.image_url}
+              topText={meme.top_text}
+              bottomText={meme.bottom_text}
+            />
           ))}
         </ul>
       )}
