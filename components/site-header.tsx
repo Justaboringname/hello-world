@@ -22,9 +22,6 @@ export async function SiteHeader() {
         <Link href="/rate" className="text-zinc-600 hover:underline dark:text-zinc-400">
           Rate
         </Link>
-        <Link href="/rate?tab=memes" className="text-zinc-600 hover:underline dark:text-zinc-400">
-          Memes
-        </Link>
         <Link href="/create" className="text-zinc-600 hover:underline dark:text-zinc-400">
           Create
         </Link>

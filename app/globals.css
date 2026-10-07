@@ -19,6 +19,34 @@
   }
 }
 
+/* Scale the whole UI up on big screens, like zooming the browser: every
+   Tailwind size here is in rem. Percentages respect the visitor's own font
+   size setting, and media queries keep measuring against the browser default,
+   so the breakpoints themselves don't move. */
+html {
+  font-size: 100%;
+}
+@media (min-width: 80rem) {
+  html {
+    font-size: 112.5%; /* >= 1280px */
+  }
+}
+@media (min-width: 96rem) {
+  html {
+    font-size: 125%; /* >= 1536px */
+  }
+}
+@media (min-width: 120rem) {
+  html {
+    font-size: 137.5%; /* >= 1920px */
+  }
+}
+@media (min-width: 150rem) {
+  html {
+    font-size: 150%; /* >= 2400px */
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

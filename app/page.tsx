@@ -179,6 +179,7 @@ export default async function Home() {
                 alt={meme.title}
                 topText={meme.top_text}
                 bottomText={meme.bottom_text}
+                variant="thumb"
               />
               <span className="flex items-center justify-between gap-3 px-4 py-3">
                 <span className="truncate font-medium">{meme.title}</span>
