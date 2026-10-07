@@ -4,22 +4,23 @@ A Next.js app on Vercel backed by Supabase. Week 2 added a public memes page;
 week 3 added Google sign-in, a `profiles` table, a Profile page, and a
 members-only route. Week 4 turns it into a rating app: signed-in users post a
 photo, Gemini writes three captions for it, and everyone votes on the funniest
-one. The memes moved into the same `/rate` feed and can be voted on too, and
-the old members-only `/vault` became members-only memes in that feed.
+one. Memes live in the same `/rate` feed: anyone signed in can post their own
+and vote on any of them, and the old members-only `/vault` became
+members-only memes ("Sign in to see more memes").
 
 ## Routes
 
 | Route            | Access    | What it does                                                       |
 | ---------------- | --------- | ------------------------------------------------------------------ |
 | `/`              | public    | Caption of the Day, this week's top captions, and how many captions and memes you haven't rated yet |
-| `/rate`          | public    | One feed of photos with their AI captions and memes, newest first. Voting needs sign-in; signed-out visitors see the public memes and a "Sign in to see more memes" card, signed-in users also see the members-only memes |
+| `/rate`          | public    | Tabs: All, 😂 Memes (`?tab=memes`) and 📸 AI captions (`?tab=photos`), newest first. Voting needs sign-in. Signed-out visitors see the public memes and a "Sign in to see N more memes" card at the top; signed-in users also see the members-only memes |
 | `/p/[id]`        | public    | One photo: shareable link, votes, and the exact prompt and model used |
-| `/create`        | signed in | Upload a photo, pick a vibe, get three Gemini captions (10 a day)  |
+| `/create`        | signed in | ✨ AI captions: upload a photo, pick a vibe, get three Gemini captions (10 a day). 😂 Make a meme (`?mode=meme`): upload an image, add top/bottom text with a live preview, post it to the feed (20 a day) |
 | `/login`         | public    | "Continue with Google"                                             |
 | `/auth/callback` | public    | OAuth redirect URI; exchanges the code for a session cookie        |
 | `/onboarding`    | signed in | Asks for first/last name if either is still empty after sign-in    |
 | `/profile`       | signed in | Edit first/last name and upload a profile photo                    |
-| `/memes`, `/vault` | public  | Redirect to `/rate` (see [`next.config.ts`](next.config.ts))       |
+| `/memes`, `/vault` | public  | Redirect to `/rate?tab=memes` (see [`next.config.ts`](next.config.ts)) |
 
 Signed-out visitors to a protected route are redirected to `/login` by
 [`proxy.ts`](proxy.ts), and each protected page re-checks the session on the
@@ -29,7 +30,15 @@ server ([`lib/auth.ts`](lib/auth.ts)).
 
 ### 1. Database (Supabase SQL Editor)
 
-Run [`supabase/profiles.sql`](supabase/profiles.sql). It creates:
+Run the files in this order. If you already ran `memes.sql` in an earlier
+week, skip it: it creates the table and inserts its rows, so it can't run
+twice. Run `profiles.sql`, `captions.sql` and `meme_votes.sql` again whenever
+they change; they are safe to re-run, and newer versions add columns and
+functions the app needs.
+
+Start with [`supabase/memes.sql`](supabase/memes.sql) (week 2), which creates
+the `memes` table and its five starter memes. Then run
+[`supabase/profiles.sql`](supabase/profiles.sql). It creates:
 
 - `public.profiles` (`first_name`, `last_name` and `avatar_url` are nullable)
 - an `on_auth_user_created` trigger on `auth.users` that inserts a profiles row
@@ -55,6 +64,11 @@ Then run [`supabase/meme_votes.sql`](supabase/meme_votes.sql). It:
 - adds `members_only`, `upvotes`, `downvotes` and `score` to `memes`, and
   moves the four memes that used to be hard-coded on `/vault` into the table
   as members-only
+- lets signed-in users post memes: `user_id`, `author_name` and `image_path`
+  (an image in their own folder of the `photos` bucket), with a trigger that
+  stamps `created_at` and the author name
+- adds `members_only_meme_count()`, so signed-out visitors see how many memes
+  they're missing without seeing the memes
 - creates `meme_votes`: one row per (meme, user), `vote` is `1` or `-1`, with
   a trigger that keeps the meme totals in sync
 - creates the `rate_feed` view (photos and memes, newest first) that `/rate`
@@ -67,7 +81,7 @@ should be `true` for all of them.
 
 | Table / bucket  | Signed out | Signed in |
 | --------------- | ---------- | --------- |
-| `memes`         | read public memes only | read all, including members-only. Nobody can write; totals change only through the vote trigger |
+| `memes`         | read public memes only | read all, including members-only; post memes only as yourself, with an image from your own Storage folder, never members-only, starting at 0 votes. No edits or deletes; totals change only through the vote trigger |
 | `meme_votes`    | no access  | read, cast, change and remove **own** votes only |
 | `profiles`      | none       | read, create and update **own** row only |
 | `generations`   | read       | read; create only as yourself, with a photo from your own Storage folder. No edits or deletes |

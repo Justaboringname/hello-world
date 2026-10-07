@@ -1,14 +1,23 @@
 import Link from "next/link";
 import { getViewer } from "@/lib/auth";
-import { getTopCaptions, getUnratedCount, photoUrl, type RankedCaption } from "@/lib/feed";
+import { MemeImage } from "@/components/meme-image";
+import {
+  getTopCaptions,
+  getTopMemes,
+  getUnratedCount,
+  memeImageUrl,
+  photoUrl,
+  type RankedCaption,
+} from "@/lib/feed";
 import { isProfileComplete } from "@/lib/profile";
 import { daysAgo, startOfTodayInNewYork } from "@/lib/time";
 
 export default async function Home() {
   const viewer = await getViewer();
-  const [today, week, unrated] = await Promise.all([
+  const [today, week, topMemes, unrated] = await Promise.all([
     getTopCaptions(startOfTodayInNewYork(), 1),
     getTopCaptions(daysAgo(7), 5),
+    getTopMemes(4),
     viewer ? getUnratedCount(viewer.userId) : null,
   ]);
   const captionOfTheDay = today[0];
@@ -23,14 +32,15 @@ export default async function Home() {
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 font-sans">
       <section className="text-center">
         <p className="text-sm font-medium uppercase tracking-widest text-blue-600">
-          New York, captioned by AI
+          Memes and AI captions from New York
         </p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
-          Snap the city. Vote on the funniest caption.
+          Snap the city. Vote on what&apos;s funny.
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-zinc-600 dark:text-zinc-400">
-          Post a photo from your week in New York, and Gemini writes three captions
-          for it. Everyone votes, and the best one each day is Caption of the Day.
+          Post a meme, or a photo from your week in New York and let Gemini write
+          three captions for it. Everyone votes, and the best caption each day is
+          Caption of the Day.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
@@ -40,10 +50,16 @@ export default async function Home() {
             Start rating
           </Link>
           <Link
+            href="/create?mode=meme"
+            className="rounded-full border border-zinc-300 px-5 py-2.5 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          >
+            Make a meme
+          </Link>
+          <Link
             href="/create"
             className="rounded-full border border-zinc-300 px-5 py-2.5 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
           >
-            Caption a photo
+            Caption a photo with AI
           </Link>
         </div>
 
@@ -140,6 +156,39 @@ export default async function Home() {
             </Link>
           </p>
         )}
+      </section>
+
+      <section className="mt-12">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
+            Top memes
+          </h2>
+          <Link href="/rate?tab=memes" className="text-sm text-blue-600 hover:underline">
+            All memes &rarr;
+          </Link>
+        </div>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          {topMemes.map((meme) => (
+            <Link
+              key={meme.id}
+              href="/rate?tab=memes"
+              className="overflow-hidden rounded-2xl border border-zinc-200 transition hover:shadow-lg dark:border-zinc-800"
+            >
+              <MemeImage
+                src={memeImageUrl(meme)}
+                alt={meme.title}
+                topText={meme.top_text}
+                bottomText={meme.bottom_text}
+              />
+              <span className="flex items-center justify-between gap-3 px-4 py-3">
+                <span className="truncate font-medium">{meme.title}</span>
+                <span className="shrink-0 text-sm font-semibold tabular-nums text-zinc-500">
+                  {meme.score > 0 ? `+${meme.score}` : meme.score}
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
       </section>
     </main>
   );

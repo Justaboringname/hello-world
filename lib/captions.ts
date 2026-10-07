@@ -77,15 +77,35 @@ export type Generation = {
 export type Meme = {
   id: number;
   title: string;
-  image_url: string;
+  image_url: string | null; // the seeded classics, hosted on imgflip
+  image_path: string | null; // memes people post, in the photos bucket
   top_text: string | null;
   bottom_text: string | null;
   members_only: boolean;
+  author_name: string | null;
   upvotes: number;
   downvotes: number;
   score: number;
   created_at: string;
 };
+
+// Limits for posted memes. supabase/meme_votes.sql enforces the same ones
+// (the lengths as a check constraint, the daily limit in stamp_meme).
+export const MEME_TITLE_MAX_LENGTH = 80;
+export const MEME_TEXT_MAX_LENGTH = 100;
+export const DAILY_MEME_LIMIT = 20;
+
+// The three feeds on /rate.
+export const RATE_TABS = {
+  all: "All",
+  memes: "😂 Memes",
+  photos: "📸 AI captions",
+} as const;
+export type RateTab = keyof typeof RATE_TABS;
+
+export function isRateTab(value: unknown): value is RateTab {
+  return typeof value === "string" && Object.hasOwn(RATE_TABS, value);
+}
 
 export type GenerationDetail = Generation & {
   system_prompt: string;

@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
   // members-only memes there.
   async redirects() {
     return [
-      { source: "/memes", destination: "/rate", permanent: false },
-      { source: "/vault", destination: "/rate", permanent: false },
+      { source: "/memes", destination: "/rate?tab=memes", permanent: false },
+      { source: "/vault", destination: "/rate?tab=memes", permanent: false },
     ];
   },
   experimental: {
