@@ -19,10 +19,22 @@ export async function SiteHeader() {
         <Link href="/" className="font-semibold">
           Hello World
         </Link>
-        <Link href="/memes" className="text-zinc-600 hover:underline dark:text-zinc-400">
+        <Link href="/rate" className="text-zinc-600 hover:underline dark:text-zinc-400">
+          Rate
+        </Link>
+        <Link href="/create" className="text-zinc-600 hover:underline dark:text-zinc-400">
+          Create
+        </Link>
+        <Link
+          href="/memes"
+          className="hidden text-zinc-600 hover:underline sm:inline dark:text-zinc-400"
+        >
           Memes
         </Link>
-        <Link href="/vault" className="text-zinc-600 hover:underline dark:text-zinc-400">
+        <Link
+          href="/vault"
+          className="hidden text-zinc-600 hover:underline sm:inline dark:text-zinc-400"
+        >
           Vault 🔒
         </Link>
 
