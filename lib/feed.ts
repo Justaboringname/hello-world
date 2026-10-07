@@ -5,6 +5,7 @@ import {
   type Caption,
   type Generation,
   type GenerationDetail,
+  type Meme,
   type VoteValue,
 } from "@/lib/captions";
 import { supabaseEnv } from "@/lib/supabase/env";
@@ -31,22 +32,53 @@ function sortCaptions<T extends Generation>(generation: T): T {
   };
 }
 
-export async function getFeed(page: number) {
+const MEME_COLUMNS =
+  "id, title, image_url, top_text, bottom_text, members_only, upvotes, downvotes, score, created_at";
+
+export type FeedItem =
+  | { kind: "photo"; generation: Generation }
+  | { kind: "meme"; meme: Meme };
+
+// Photos and memes in one list, newest first. The rate_feed view decides the
+// order (and, through RLS, hides members-only memes from signed-out
+// visitors); the rows themselves are then loaded per kind.
+export async function getRateFeed(page: number) {
   const supabase = await createClient();
   const from = page * FEED_PAGE_SIZE;
   // Ask for one extra row to know whether there is another page.
-  const { data, error } = await supabase
-    .from("generations")
-    .select(GENERATION_COLUMNS)
+  const { data: rows, error } = await supabase
+    .from("rate_feed")
+    .select("kind, id")
     .order("created_at", { ascending: false })
+    .order("kind", { ascending: false })
+    .order("id", { ascending: false })
     .range(from, from + FEED_PAGE_SIZE);
+  if (error) return { error, items: [] as FeedItem[], hasMore: false };
 
-  const rows = ((data ?? []) as Generation[]).map(sortCaptions);
-  return {
-    error,
-    generations: rows.slice(0, FEED_PAGE_SIZE),
-    hasMore: rows.length > FEED_PAGE_SIZE,
-  };
+  const pageRows = (rows ?? []).slice(0, FEED_PAGE_SIZE);
+  const ids = (kind: string) => pageRows.filter((row) => row.kind === kind).map((row) => row.id);
+  const [photos, memes] = await Promise.all([
+    ids("photo").length
+      ? supabase.from("generations").select(GENERATION_COLUMNS).in("id", ids("photo"))
+      : { data: [], error: null },
+    ids("meme").length
+      ? supabase.from("memes").select(MEME_COLUMNS).in("id", ids("meme"))
+      : { data: [], error: null },
+  ]);
+  const loadError = photos.error ?? memes.error;
+  if (loadError) return { error: loadError, items: [] as FeedItem[], hasMore: false };
+
+  const photoById = new Map(((photos.data ?? []) as Generation[]).map((g) => [g.id, sortCaptions(g)]));
+  const memeById = new Map(((memes.data ?? []) as Meme[]).map((m) => [m.id, m]));
+  const items: FeedItem[] = [];
+  for (const row of pageRows) {
+    if (row.kind === "photo" && photoById.has(row.id)) {
+      items.push({ kind: "photo", generation: photoById.get(row.id)! });
+    } else if (row.kind === "meme" && memeById.has(row.id)) {
+      items.push({ kind: "meme", meme: memeById.get(row.id)! });
+    }
+  }
+  return { error: null, items, hasMore: (rows ?? []).length > FEED_PAGE_SIZE };
 }
 
 // Cached per request so generateMetadata and the page share one query.
@@ -76,6 +108,21 @@ export async function getMyVotes(userId: string | undefined, captionIds: number[
   return votes;
 }
 
+// The signed-in user's votes on these memes (same rules as getMyVotes).
+export async function getMyMemeVotes(userId: string | undefined, memeIds: number[]) {
+  const votes = new Map<number, VoteValue>();
+  if (!userId || memeIds.length === 0) return votes;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("meme_votes")
+    .select("meme_id, vote")
+    .eq("user_id", userId)
+    .in("meme_id", memeIds);
+  for (const row of data ?? []) votes.set(row.meme_id, row.vote);
+  return votes;
+}
+
 export type RankedCaption = Caption & {
   generations: Pick<Generation, "id" | "image_path" | "author_name" | "location" | "created_at">;
 };
@@ -99,17 +146,25 @@ export async function getTopCaptions(since: Date, limit: number) {
   return (data ?? []) as unknown as RankedCaption[];
 }
 
-// How many captions this user hasn't voted on yet.
+// How many captions and memes this user hasn't voted on yet.
 export async function getUnratedCount(userId: string) {
   const supabase = await createClient();
-  const [captions, votes] = await Promise.all([
+  const [captions, captionVotes, memes, memeVotes] = await Promise.all([
     supabase.from("captions").select("id", { count: "exact", head: true }),
     supabase
       .from("caption_votes")
       .select("caption_id", { count: "exact", head: true })
       .eq("user_id", userId),
+    supabase.from("memes").select("id", { count: "exact", head: true }),
+    supabase
+      .from("meme_votes")
+      .select("meme_id", { count: "exact", head: true })
+      .eq("user_id", userId),
   ]);
-  return Math.max(0, (captions.count ?? 0) - (votes.count ?? 0));
+  return Math.max(
+    0,
+    (captions.count ?? 0) - (captionVotes.count ?? 0) + (memes.count ?? 0) - (memeVotes.count ?? 0),
+  );
 }
 
 // Photos this user captioned in the last 24 hours (for the daily limit).

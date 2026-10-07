@@ -74,6 +74,19 @@ export type Generation = {
   captions: Caption[];
 };
 
+export type Meme = {
+  id: number;
+  title: string;
+  image_url: string;
+  top_text: string | null;
+  bottom_text: string | null;
+  members_only: boolean;
+  upvotes: number;
+  downvotes: number;
+  score: number;
+  created_at: string;
+};
+
 export type GenerationDetail = Generation & {
   system_prompt: string;
   prompt: string;

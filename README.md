@@ -1,25 +1,25 @@
 # Hello World
 
-A Next.js app on Vercel backed by Supabase. Week 2 added the public
-[`/memes`](app/memes/page.tsx) page; week 3 added Google sign-in, a `profiles`
-table, a Profile page, and a members-only route. Week 4 turns it into a rating
-app: signed-in users post a photo, Gemini writes three captions for it, and
-everyone votes on the funniest one.
+A Next.js app on Vercel backed by Supabase. Week 2 added a public memes page;
+week 3 added Google sign-in, a `profiles` table, a Profile page, and a
+members-only route. Week 4 turns it into a rating app: signed-in users post a
+photo, Gemini writes three captions for it, and everyone votes on the funniest
+one. The memes moved into the same `/rate` feed and can be voted on too, and
+the old members-only `/vault` became members-only memes in that feed.
 
 ## Routes
 
 | Route            | Access    | What it does                                                       |
 | ---------------- | --------- | ------------------------------------------------------------------ |
-| `/`              | public    | Caption of the Day, this week's top captions, and how many captions you haven't rated yet |
-| `/rate`          | public    | Feed of photos and their AI captions; voting needs sign-in         |
+| `/`              | public    | Caption of the Day, this week's top captions, and how many captions and memes you haven't rated yet |
+| `/rate`          | public    | One feed of photos with their AI captions and memes, newest first. Voting needs sign-in; signed-out visitors see the public memes and a "Sign in to see more memes" card, signed-in users also see the members-only memes |
 | `/p/[id]`        | public    | One photo: shareable link, votes, and the exact prompt and model used |
 | `/create`        | signed in | Upload a photo, pick a vibe, get three Gemini captions (10 a day)  |
-| `/memes`         | public    | Rows from the `memes` table                                        |
 | `/login`         | public    | "Continue with Google"                                             |
 | `/auth/callback` | public    | OAuth redirect URI; exchanges the code for a session cookie        |
 | `/onboarding`    | signed in | Asks for first/last name if either is still empty after sign-in    |
 | `/profile`       | signed in | Edit first/last name and upload a profile photo                    |
-| `/vault`         | signed in | Members-only memes                                                 |
+| `/memes`, `/vault` | public  | Redirect to `/rate` (see [`next.config.ts`](next.config.ts))       |
 
 Signed-out visitors to a protected route are redirected to `/login` by
 [`proxy.ts`](proxy.ts), and each protected page re-checks the session on the
@@ -50,14 +50,25 @@ Then run [`supabase/captions.sql`](supabase/captions.sql) for week 4. It creates
   transaction
 - a public `photos` Storage bucket (JPEG/PNG/WebP, 3 MB)
 
-It ends by listing every table in `public` with `rls_enabled`, which should be
-`true` for all of them.
+Then run [`supabase/meme_votes.sql`](supabase/meme_votes.sql). It:
+
+- adds `members_only`, `upvotes`, `downvotes` and `score` to `memes`, and
+  moves the four memes that used to be hard-coded on `/vault` into the table
+  as members-only
+- creates `meme_votes`: one row per (meme, user), `vote` is `1` or `-1`, with
+  a trigger that keeps the meme totals in sync
+- creates the `rate_feed` view (photos and memes, newest first) that `/rate`
+  pages through. It is `security_invoker`, so the RLS below still applies
+
+Both files end by listing every table in `public` with `rls_enabled`, which
+should be `true` for all of them.
 
 #### Row level security
 
 | Table / bucket  | Signed out | Signed in |
 | --------------- | ---------- | --------- |
-| `memes`         | read       | (none; the page reads as `anon`) |
+| `memes`         | read public memes only | read all, including members-only. Nobody can write; totals change only through the vote trigger |
+| `meme_votes`    | no access  | read, cast, change and remove **own** votes only |
 | `profiles`      | none       | read, create and update **own** row only |
 | `generations`   | read       | read; create only as yourself, with a photo from your own Storage folder. No edits or deletes |
 | `captions`      | read       | read; add only to your own generations, starting at 0 votes. No edits or deletes. Totals change only through the vote trigger |
@@ -135,9 +146,10 @@ opens in an incognito window.
    ([`lib/gemini.ts`](lib/gemini.ts)) asking for JSON with exactly three
    captions, and only after that succeeds uploads the photo and calls
    `create_generation`. If Gemini fails, nothing is stored.
-2. **Rate.** Each caption has 👍/👎 buttons. Clicking one calls `castVote`
+2. **Rate.** `/rate` mixes the photos and the memes in one feed. Every
+   caption and every meme has 👍/👎 buttons. Clicking one calls `castVote`
    ([`app/rate/actions.ts`](app/rate/actions.ts)), which upserts the user's row
-   in `caption_votes`. Clicking the same button again deletes the row, and
+   in `caption_votes` or `meme_votes`. Clicking the same button again deletes the row, and
    clicking the other one flips it. The button updates right away and then
    settles on the totals the server returns. Signed-out visitors see the
    totals, but the buttons link to sign-in, and the action refuses them too.

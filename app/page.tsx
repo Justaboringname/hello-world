@@ -62,7 +62,7 @@ export default async function Home() {
             )}
             {unrated ? (
               <Link href="/rate" className="font-medium text-blue-600 hover:underline">
-                {unrated} {unrated === 1 ? "caption is" : "captions are"} waiting for your vote.
+                {unrated} {unrated === 1 ? "caption or meme is" : "captions and memes are"} waiting for your vote.
               </Link>
             ) : (
               "You've rated everything. Post a photo to keep it going!"

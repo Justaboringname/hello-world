@@ -25,18 +25,6 @@ export async function SiteHeader() {
         <Link href="/create" className="text-zinc-600 hover:underline dark:text-zinc-400">
           Create
         </Link>
-        <Link
-          href="/memes"
-          className="hidden text-zinc-600 hover:underline sm:inline dark:text-zinc-400"
-        >
-          Memes
-        </Link>
-        <Link
-          href="/vault"
-          className="hidden text-zinc-600 hover:underline sm:inline dark:text-zinc-400"
-        >
-          Vault 🔒
-        </Link>
 
         <div className="ml-auto flex items-center gap-3">
           {viewer ? (
