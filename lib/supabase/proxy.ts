@@ -4,9 +4,9 @@ import { supabaseEnv } from "./env";
 
 // Routes that require a signed-in user. Pages re-check on the server too;
 // this is the fast, optimistic redirect before anything renders.
-const PROTECTED_PREFIXES = ["/vault", "/profile", "/onboarding", "/create"];
+const PROTECTED_PREFIXES = ["/profile", "/onboarding", "/create"];
 
-function isProtected(pathname: string) {
+export function isProtected(pathname: string) {
   return PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );

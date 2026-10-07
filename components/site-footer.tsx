@@ -1,8 +1,6 @@
 import Link from "next/link";
 
 const links = [
-  { href: "/memes", label: "Memes" },
-  { href: "/vault", label: "Vault" },
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },
 ];

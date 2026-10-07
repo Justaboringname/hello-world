@@ -3,6 +3,7 @@ import { signInWithGoogle } from "@/app/auth/actions";
 import { SubmitButton } from "@/components/submit-button";
 import { getViewer } from "@/lib/auth";
 import { firstParam, safeNextPath } from "@/lib/redirect";
+import { isProtected } from "@/lib/supabase/proxy";
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
@@ -16,9 +17,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <div className="w-full max-w-sm rounded-2xl border border-zinc-200 p-8 text-center dark:border-zinc-800">
         <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
         <p className="mt-2 text-sm text-zinc-500">
-          {next === "/"
-            ? "Use your Google account to continue."
-            : "That page is for signed-in users only."}
+          {isProtected(new URL(next, "http://x").pathname)
+            ? "That page is for signed-in users only."
+            : "Use your Google account to vote, post photos and see more memes."}
         </p>
 
         <form action={signInWithGoogle} className="mt-6">
