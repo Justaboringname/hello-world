@@ -18,7 +18,7 @@ export default function PrivacyPage() {
         <li>A profile photo, if you choose to upload one.</li>
         <li>
           Photos you post for captioning, the location you type with them, the AI
-          captions, and your votes.
+          captions, memes you post, and your votes.
         </li>
       </ul>
 
@@ -29,8 +29,8 @@ export default function PrivacyPage() {
         advertising.
       </p>
       <p className="mt-4">
-        Photos you post are public, together with their captions, the location
-        you typed, and your first name and last initial. To write the captions,
+        Photos and memes you post are public, together with their captions, the
+        location you typed, and your first name and last initial. To write the captions,
         the photo and location are sent to Google&apos;s Gemini API. Google may
         use content sent to its free tier to improve its products, so please
         don&apos;t post photos of people who haven&apos;t agreed to it. Your

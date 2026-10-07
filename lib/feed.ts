@@ -6,6 +6,7 @@ import {
   type Generation,
   type GenerationDetail,
   type Meme,
+  type RateTab,
   type VoteValue,
 } from "@/lib/captions";
 import { supabaseEnv } from "@/lib/supabase/env";
@@ -33,22 +34,28 @@ function sortCaptions<T extends Generation>(generation: T): T {
 }
 
 const MEME_COLUMNS =
-  "id, title, image_url, top_text, bottom_text, members_only, upvotes, downvotes, score, created_at";
+  "id, title, image_url, image_path, top_text, bottom_text, members_only, author_name, upvotes, downvotes, score, created_at";
+
+export function memeImageUrl(meme: Pick<Meme, "image_url" | "image_path">) {
+  return meme.image_path ? photoUrl(meme.image_path) : (meme.image_url ?? "");
+}
 
 export type FeedItem =
   | { kind: "photo"; generation: Generation }
   | { kind: "meme"; meme: Meme };
 
-// Photos and memes in one list, newest first. The rate_feed view decides the
-// order (and, through RLS, hides members-only memes from signed-out
-// visitors); the rows themselves are then loaded per kind.
-export async function getRateFeed(page: number) {
+const TAB_KIND = { memes: "meme", photos: "photo" } as const;
+
+// Photos and memes in one list, newest first (or just one kind, per tab). The
+// rate_feed view decides the order (and, through RLS, hides members-only
+// memes from signed-out visitors); the rows themselves are loaded per kind.
+export async function getRateFeed(page: number, tab: RateTab) {
   const supabase = await createClient();
   const from = page * FEED_PAGE_SIZE;
+  let query = supabase.from("rate_feed").select("kind, id");
+  if (tab !== "all") query = query.eq("kind", TAB_KIND[tab]);
   // Ask for one extra row to know whether there is another page.
-  const { data: rows, error } = await supabase
-    .from("rate_feed")
-    .select("kind, id")
+  const { data: rows, error } = await query
     .order("created_at", { ascending: false })
     .order("kind", { ascending: false })
     .order("id", { ascending: false })
@@ -177,4 +184,37 @@ export async function countRecentGenerations(userId: string) {
     .eq("user_id", userId)
     .gte("created_at", since);
   return count ?? 0;
+}
+
+// Memes this user posted in the last 24 hours (for the daily limit).
+export async function countRecentMemes(userId: string) {
+  const supabase = await createClient();
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from("memes")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", since);
+  return count ?? 0;
+}
+
+// How many members-only memes exist; signed-out visitors can't read them,
+// but they can see how many they're missing.
+export async function getMembersOnlyMemeCount() {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("members_only_meme_count");
+  return typeof data === "number" ? data : Number(data ?? 0);
+}
+
+// Highest-scoring memes, newest first among ties, for the home page.
+export async function getTopMemes(limit: number) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("memes")
+    .select(MEME_COLUMNS)
+    .order("score", { ascending: false })
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(limit);
+  return (data ?? []) as Meme[];
 }
