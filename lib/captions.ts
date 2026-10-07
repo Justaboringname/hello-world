@@ -89,7 +89,8 @@ export type Meme = {
   created_at: string;
 };
 
-// Limits for posted memes; supabase/meme_votes.sql enforces the same ones.
+// Limits for posted memes. supabase/meme_votes.sql enforces the same ones
+// (the lengths as a check constraint, the daily limit in stamp_meme).
 export const MEME_TITLE_MAX_LENGTH = 80;
 export const MEME_TEXT_MAX_LENGTH = 100;
 export const DAILY_MEME_LIMIT = 20;

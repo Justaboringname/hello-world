@@ -30,9 +30,11 @@ server ([`lib/auth.ts`](lib/auth.ts)).
 
 ### 1. Database (Supabase SQL Editor)
 
-Run the files in this order. If you set up an earlier week already, skip the
-ones you ran. `profiles.sql`, `captions.sql` and `meme_votes.sql` are safe to
-run again; `memes.sql` is not (it creates the table and inserts its rows).
+Run the files in this order. If you already ran `memes.sql` in an earlier
+week, skip it: it creates the table and inserts its rows, so it can't run
+twice. Run `profiles.sql`, `captions.sql` and `meme_votes.sql` again whenever
+they change; they are safe to re-run, and newer versions add columns and
+functions the app needs.
 
 Start with [`supabase/memes.sql`](supabase/memes.sql) (week 2), which creates
 the `memes` table and its five starter memes. Then run

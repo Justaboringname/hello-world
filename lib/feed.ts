@@ -46,23 +46,59 @@ export type FeedItem =
 
 const TAB_KIND = { memes: "meme", photos: "photo" } as const;
 
-// Photos and memes in one list, newest first (or just one kind, per tab). The
-// rate_feed view decides the order (and, through RLS, hides members-only
-// memes from signed-out visitors); the rows themselves are loaded per kind.
+type FeedRow = { kind: string; id: number };
+
+// One page of rate_feed rows of a single kind, newest first, plus one extra
+// row to tell whether there is another page.
+async function feedRows(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  kind: "meme" | "photo",
+  page: number,
+  size: number,
+) {
+  return supabase
+    .from("rate_feed")
+    .select("kind, id")
+    .eq("kind", kind)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(page * size, page * size + size);
+}
+
+// The feed for /rate. The Memes and AI captions tabs are one kind, newest
+// first. The All tab takes half a page of each and alternates them, so memes
+// show up on the first page even when there are many newer photos. The
+// rate_feed view (and RLS behind it) hides members-only memes from
+// signed-out visitors; the rows themselves are loaded per kind.
 export async function getRateFeed(page: number, tab: RateTab) {
   const supabase = await createClient();
-  const from = page * FEED_PAGE_SIZE;
-  let query = supabase.from("rate_feed").select("kind, id");
-  if (tab !== "all") query = query.eq("kind", TAB_KIND[tab]);
-  // Ask for one extra row to know whether there is another page.
-  const { data: rows, error } = await query
-    .order("created_at", { ascending: false })
-    .order("kind", { ascending: false })
-    .order("id", { ascending: false })
-    .range(from, from + FEED_PAGE_SIZE);
-  if (error) return { error, items: [] as FeedItem[], hasMore: false };
 
-  const pageRows = (rows ?? []).slice(0, FEED_PAGE_SIZE);
+  let pageRows: FeedRow[];
+  let hasMore: boolean;
+  if (tab === "all") {
+    const half = FEED_PAGE_SIZE / 2;
+    const [memeRows, photoRows] = await Promise.all([
+      feedRows(supabase, "meme", page, half),
+      feedRows(supabase, "photo", page, half),
+    ]);
+    const error = memeRows.error ?? photoRows.error;
+    if (error) return { error, items: [] as FeedItem[], hasMore: false };
+
+    const memesOnPage = (memeRows.data ?? []).slice(0, half);
+    const photosOnPage = (photoRows.data ?? []).slice(0, half);
+    pageRows = [];
+    for (let i = 0; i < Math.max(memesOnPage.length, photosOnPage.length); i++) {
+      if (memesOnPage[i]) pageRows.push(memesOnPage[i]);
+      if (photosOnPage[i]) pageRows.push(photosOnPage[i]);
+    }
+    hasMore = (memeRows.data ?? []).length > half || (photoRows.data ?? []).length > half;
+  } else {
+    const { data, error } = await feedRows(supabase, TAB_KIND[tab], page, FEED_PAGE_SIZE);
+    if (error) return { error, items: [] as FeedItem[], hasMore: false };
+    pageRows = (data ?? []).slice(0, FEED_PAGE_SIZE);
+    hasMore = (data ?? []).length > FEED_PAGE_SIZE;
+  }
+
   const ids = (kind: string) => pageRows.filter((row) => row.kind === kind).map((row) => row.id);
   const [photos, memes] = await Promise.all([
     ids("photo").length
@@ -85,7 +121,7 @@ export async function getRateFeed(page: number, tab: RateTab) {
       items.push({ kind: "meme", meme: memeById.get(row.id)! });
     }
   }
-  return { error: null, items, hasMore: (rows ?? []).length > FEED_PAGE_SIZE };
+  return { error: null, items, hasMore };
 }
 
 // Cached per request so generateMetadata and the page share one query.

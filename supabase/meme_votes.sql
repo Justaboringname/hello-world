@@ -42,7 +42,9 @@ $$;
 create index if not exists memes_created_at_idx on public.memes (created_at desc);
 create index if not exists memes_user_id_created_at_idx on public.memes (user_id, created_at desc);
 
--- A posted meme gets the server's clock and the poster's "First L." name.
+-- A posted meme gets the server's clock and the poster's "First L." name,
+-- and each user can post at most 20 a day (also when calling the API
+-- directly). The lock makes two posts at the same moment take turns.
 create or replace function public.stamp_meme()
 returns trigger
 language plpgsql
@@ -50,6 +52,12 @@ set search_path = ''
 as $$
 begin
   if new.user_id is not null then
+    perform pg_advisory_xact_lock(hashtextextended(new.user_id::text, 0));
+    if (select count(*) from public.memes m
+         where m.user_id = new.user_id
+           and m.created_at > now() - interval '24 hours') >= 20 then
+      raise exception 'You''ve posted 20 memes in the last 24 hours. Come back tomorrow!';
+    end if;
     new.created_at := now();
     select nullif(
              concat_ws(' ', nullif(trim(p.first_name), ''), nullif(left(trim(p.last_name), 1), '') || '.'),
