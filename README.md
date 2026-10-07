@@ -100,13 +100,20 @@ In `.env.local` and in Vercel (Settings → Environment Variables):
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon or publishable key>
 GEMINI_API_KEY=<key from https://aistudio.google.com/apikey>
-# Optional. Defaults to gemini-3.5-flash. Use a lighter model such as
-# gemini-3.1-flash-lite if your key's free tier rejects the default.
+# Optional. The model to try first; defaults to gemini-3.5-flash.
 GEMINI_MODEL=
 ```
 
 `GEMINI_API_KEY` has no `NEXT_PUBLIC_` prefix, so it stays on the server. The
 browser never calls Gemini directly.
+
+Gemini sometimes answers `503 UNAVAILABLE` ("high demand") or `429` (free-tier
+rate limit). [`lib/gemini.ts`](lib/gemini.ts) retries the same model once,
+then falls back to `gemini-3.1-flash-lite`, which is lighter and usually has
+spare capacity. A model your key can't use (`404`) also falls back. Each attempt
+times out after 20 s and the whole thing gives up after 50 s, inside the 60 s
+the `/create` page allows. The model that actually answered is saved with the
+captions and shown on the photo's page.
 
 ### 5. Vercel
 
