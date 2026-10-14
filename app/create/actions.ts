@@ -87,7 +87,7 @@ export async function createGeneration(
   });
   if (error) return { status: "error", message: `Could not save: ${error.message}` };
 
-  redirect(`/p/${generationId}`);
+  redirect(`/p/${generationId}?posted=1`);
 }
 
 function oneLine(value: FormDataEntryValue | null) {
@@ -138,14 +138,18 @@ export async function createMeme(_prev: FormState, formData: FormData): Promise<
     });
   if (uploadError) return { status: "error", message: `Upload failed: ${uploadError.message}` };
 
-  const { error } = await supabase.from("memes").insert({
-    user_id: userId,
-    title,
-    image_path: path,
-    top_text: topText,
-    bottom_text: bottomText,
-  });
+  const { data: meme, error } = await supabase
+    .from("memes")
+    .insert({
+      user_id: userId,
+      title,
+      image_path: path,
+      top_text: topText,
+      bottom_text: bottomText,
+    })
+    .select("id")
+    .single();
   if (error) return { status: "error", message: `Could not save: ${error.message}` };
 
-  redirect("/rate?tab=memes");
+  redirect(`/m/${meme.id}?posted=1`);
 }

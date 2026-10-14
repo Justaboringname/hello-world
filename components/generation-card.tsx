@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CaptionRow } from "@/components/caption-row";
+import { ImageBackdrop } from "@/components/image-backdrop";
 import { vibeLabel, type Generation, type VoteValue } from "@/lib/captions";
 import { photoUrl } from "@/lib/feed";
 import { timeAgo } from "@/lib/time";
@@ -26,19 +27,23 @@ export function GenerationCard({
 }) {
   const detailHref = `/p/${generation.id}`;
   const topId = topCaptionId(generation);
+  const src = photoUrl(generation.image_path);
   const photo = (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={photoUrl(generation.image_path)}
-      alt={generation.location ? `Photo from ${generation.location}` : "User photo"}
-      loading="lazy"
-      className="max-h-[32rem] w-full bg-zinc-100 object-contain dark:bg-zinc-900"
-    />
+    <div className="relative overflow-hidden bg-zinc-900">
+      <ImageBackdrop src={src} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={generation.location ? `Photo from ${generation.location}` : "User photo"}
+        loading="lazy"
+        className="relative max-h-[32rem] w-full object-contain"
+      />
+    </div>
   );
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-      {linkToDetail ? <Link href={detailHref}>{photo}</Link> : photo}
+    <article className="overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm dark:border-zinc-800">
+      {linkToDetail ? <Link href={detailHref} className="block">{photo}</Link> : photo}
 
       <div className="px-4 pb-2 pt-3">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-500">
@@ -61,7 +66,10 @@ export function GenerationCard({
           </span>
         </p>
 
-        <ul className="mt-1 divide-y divide-zinc-100 dark:divide-zinc-800">
+        <p className="mt-3 text-sm text-zinc-500">
+          ✨ Gemini&apos;s captions. 👍 the ones that made you laugh:
+        </p>
+        <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
           {generation.captions.map((caption) => (
             <CaptionRow
               key={caption.id}

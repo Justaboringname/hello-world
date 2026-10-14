@@ -66,7 +66,7 @@ export function VoteButtons({
   }
 
   const buttonClass =
-    "flex h-9 w-9 items-center justify-center rounded-full border text-lg leading-none transition disabled:cursor-wait";
+    "flex h-10 w-10 items-center justify-center rounded-full border text-lg leading-none transition active:scale-90 disabled:cursor-wait sm:h-9 sm:w-9";
   const idle =
     "border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-700 dark:hover:text-zinc-100";
 

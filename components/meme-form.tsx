@@ -72,7 +72,7 @@ export function MemeForm({ remaining }: { remaining: number }) {
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={pending}
-        className="group relative block w-full overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 text-zinc-500 transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-wait dark:border-zinc-700 dark:bg-zinc-900"
+        className="group relative block w-full overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-surface text-zinc-500 transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-wait dark:border-zinc-700"
       >
         {previewUrl ? (
           <>
@@ -82,7 +82,7 @@ export function MemeForm({ remaining }: { remaining: number }) {
               topText={topText.trim() || null}
               bottomText={bottomText.trim() || null}
             />
-            <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1 text-sm text-white opacity-0 transition group-hover:opacity-100">
+            <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1 text-sm text-white transition group-focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
               Change image
             </span>
           </>

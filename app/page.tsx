@@ -18,7 +18,7 @@ export default async function Home() {
     getTopCaptions(startOfTodayInNewYork(), 1),
     getTopCaptions(daysAgo(7), 5),
     getTopMemes(4),
-    viewer ? getUnratedCount(viewer.userId) : null,
+    getUnratedCount(viewer?.userId),
   ]);
   const captionOfTheDay = today[0];
   const dateLabel = new Date().toLocaleDateString("en-US", {
@@ -29,7 +29,7 @@ export default async function Home() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 font-sans">
+    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 font-sans sm:py-14">
       <section className="text-center">
         <p className="text-sm font-medium uppercase tracking-widest text-blue-600">
           Memes and AI captions from New York
@@ -45,19 +45,19 @@ export default async function Home() {
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
             href="/rate"
-            className="rounded-full bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700"
+            className="rounded-full bg-blue-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700"
           >
             Start rating
           </Link>
           <Link
             href="/create?mode=meme"
-            className="rounded-full border border-zinc-300 px-5 py-2.5 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            className="rounded-full border border-zinc-300 bg-surface px-5 py-2.5 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
           >
             Make a meme
           </Link>
           <Link
             href="/create"
-            className="rounded-full border border-zinc-300 px-5 py-2.5 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            className="rounded-full border border-zinc-300 bg-surface px-5 py-2.5 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
           >
             Caption a photo with AI
           </Link>
@@ -76,12 +76,12 @@ export default async function Home() {
                 to finish setting up.{" "}
               </>
             )}
-            {unrated ? (
-              <Link href="/rate" className="font-medium text-blue-600 hover:underline">
-                {unrated} {unrated === 1 ? "caption or meme is" : "captions and memes are"} waiting for your vote.
+            {unrated === null ? null : unrated > 0 ? (
+              <Link href="/rate?tab=new" className="font-medium text-blue-600 hover:underline">
+                ✨ {unrated} new {unrated === 1 ? "post is" : "posts are"} waiting for your vote &rarr;
               </Link>
             ) : (
-              "You've rated everything. Post a photo to keep it going!"
+              "You're all caught up. Post something to keep it going!"
             )}
           </p>
         ) : (
@@ -95,6 +95,31 @@ export default async function Home() {
         )}
       </section>
 
+      {!viewer && (
+        <ol className="mt-10 grid gap-3 sm:grid-cols-3">
+          {[
+            ["📸", "Snap the city", "Post a photo from your week, or a meme you made."],
+            ["✨", "Gemini captions it", "Pick a vibe and get three AI captions in seconds."],
+            ["👍", "Everyone votes", "The funniest caption each day is Caption of the Day."],
+          ].map(([emoji, title, body], index) => (
+            <li
+              key={title}
+              className="flex gap-3 rounded-2xl border border-zinc-200 bg-surface p-4 shadow-sm dark:border-zinc-800"
+            >
+              <span className="text-2xl" aria-hidden>
+                {emoji}
+              </span>
+              <span>
+                <span className="block font-medium">
+                  {index + 1}. {title}
+                </span>
+                <span className="block text-sm text-zinc-500">{body}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+
       <section className="mt-14">
         <h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
           Caption of the Day · {dateLabel}
@@ -102,7 +127,7 @@ export default async function Home() {
         {captionOfTheDay ? (
           <CaptionOfTheDay caption={captionOfTheDay} />
         ) : (
-          <div className="mt-3 rounded-2xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
+          <div className="mt-3 rounded-2xl border border-dashed border-zinc-300 bg-surface p-8 text-center dark:border-zinc-700">
             <p className="font-medium">Nobody has won today yet.</p>
             <p className="mt-1 text-sm text-zinc-500">
               Post a photo or upvote today&apos;s captions to crown one. It resets
@@ -117,12 +142,12 @@ export default async function Home() {
           Top this week
         </h2>
         {week.length > 0 ? (
-          <ol className="mt-3 divide-y divide-zinc-200 rounded-2xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+          <ol className="mt-3 divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm dark:divide-zinc-800 dark:border-zinc-800">
             {week.map((caption, index) => (
               <li key={caption.id}>
                 <Link
                   href={`/p/${caption.generations.id}`}
-                  className="flex items-center gap-4 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  className="flex items-center gap-4 p-3 hover:bg-zinc-50 dark:hover:bg-white/5"
                 >
                   <span className="w-6 text-center text-lg font-semibold text-zinc-400">
                     {index + 1}
@@ -171,8 +196,8 @@ export default async function Home() {
           {topMemes.map((meme) => (
             <Link
               key={meme.id}
-              href="/rate?tab=memes"
-              className="overflow-hidden rounded-2xl border border-zinc-200 transition hover:shadow-lg dark:border-zinc-800"
+              href={`/m/${meme.id}`}
+              className="overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm transition hover:shadow-lg dark:border-zinc-800"
             >
               <MemeImage
                 src={memeImageUrl(meme)}
@@ -200,7 +225,7 @@ function CaptionOfTheDay({ caption }: { caption: RankedCaption }) {
   return (
     <Link
       href={`/p/${generation.id}`}
-      className="mt-3 grid overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:shadow-lg sm:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-950"
+      className="mt-3 grid overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm transition hover:shadow-lg sm:grid-cols-2 dark:border-zinc-800"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

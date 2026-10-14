@@ -6,20 +6,24 @@ members-only route. Week 4 turns it into a rating app: signed-in users post a
 photo, Gemini writes three captions for it, and everyone votes on the funniest
 one. Memes live in the same `/rate` feed: anyone signed in can post their own
 and vote on any of them, and the old members-only `/vault` became
-members-only memes ("Sign in to see more memes").
+members-only memes ("Sign in to see more memes"). Week 5 is about coming
+back: a **New for you** tab with only the posts you haven't rated, a page for
+every meme, a "your posts" view on Profile, and a visual pass over the whole
+app.
 
 ## Routes
 
 | Route            | Access    | What it does                                                       |
 | ---------------- | --------- | ------------------------------------------------------------------ |
-| `/`              | public    | Caption of the Day, this week's top captions, and how many captions and memes you haven't rated yet |
-| `/rate`          | public    | Tabs: All, 😂 Memes (`?tab=memes`) and 📸 AI captions (`?tab=photos`), newest first. Voting needs sign-in. Signed-out visitors see the public memes and a "Sign in to see N more memes" card at the top; signed-in users also see the members-only memes |
+| `/`              | public    | Caption of the Day, this week's top captions, top memes, and "N new posts are waiting for your vote" when signed in. Signed-out visitors also get a three-step "how it works" |
+| `/rate`          | public    | Tabs: All, ✨ New for you (`?tab=new`, signed in), 😂 Memes (`?tab=memes`) and 📸 AI captions (`?tab=photos`), newest first. Voting needs sign-in. Signed-out visitors see the public memes and a "Sign in to see N more memes" card at the top; signed-in users also see the members-only memes |
 | `/p/[id]`        | public    | One photo: shareable link, votes, and the exact prompt and model used |
-| `/create`        | signed in | ✨ AI captions: upload a photo, pick a vibe, get three Gemini captions (10 a day). 😂 Make a meme (`?mode=meme`): upload an image, add top/bottom text with a live preview, post it to the feed (20 a day) |
+| `/m/[id]`        | public    | One meme: shareable link and votes. A members-only meme asks signed-out visitors to sign in |
+| `/create`        | signed in | ✨ AI captions: upload a photo, pick a vibe, get three Gemini captions (10 a day). 😂 Make a meme (`?mode=meme`): upload an image, add top/bottom text with a live preview, post it (20 a day). Either way you land on the new post's page with a "🎉 Posted!" banner and a Share button |
 | `/login`         | public    | "Continue with Google"                                             |
 | `/auth/callback` | public    | OAuth redirect URI; exchanges the code for a session cookie        |
 | `/onboarding`    | signed in | Asks for first/last name if either is still empty after sign-in    |
-| `/profile`       | signed in | Edit first/last name and upload a profile photo                    |
+| `/profile`       | signed in | Your posts and the 👍 each one got, plus your name and profile photo |
 | `/memes`, `/vault` | public  | Redirect to `/rate?tab=memes` (see [`next.config.ts`](next.config.ts)) |
 
 Signed-out visitors to a protected route are redirected to `/login` by
@@ -32,9 +36,9 @@ server ([`lib/auth.ts`](lib/auth.ts)).
 
 Run the files in this order. If you already ran `memes.sql` in an earlier
 week, skip it: it creates the table and inserts its rows, so it can't run
-twice. Run `profiles.sql`, `captions.sql` and `meme_votes.sql` again whenever
-they change; they are safe to re-run, and newer versions add columns and
-functions the app needs.
+twice. Run `profiles.sql`, `captions.sql`, `meme_votes.sql` and
+`new_for_you.sql` again whenever they change; they are safe to re-run, and
+newer versions add columns and functions the app needs.
 
 Start with [`supabase/memes.sql`](supabase/memes.sql) (week 2), which creates
 the `memes` table and its five starter memes. Then run
@@ -76,6 +80,20 @@ Then run [`supabase/meme_votes.sql`](supabase/meme_votes.sql). It:
 
 Both files end by listing every table in `public` with `rls_enabled`, which
 should be `true` for all of them.
+
+Finally, run [`supabase/new_for_you.sql`](supabase/new_for_you.sql) (week 5).
+It adds one function and no tables:
+
+- `unrated_feed()`: other people's photos and memes the signed-in user hasn't
+  voted on yet, for the New for you tab and the counts. A photo counts as
+  rated once you've voted on any of its captions. It is `security invoker`,
+  so RLS still applies, and only signed-in users can call it. Its arguments
+  are the last row of the previous page, so voting (which takes posts out of
+  the list) never makes the next page skip any
+
+Until it has run, the rest of the app works; the New for you tab shows an
+error and the counts are hidden. The file ends with a check that should say
+`true, false` (signed-in users can run it, signed-out visitors can't).
 
 #### Row level security
 
@@ -169,8 +187,8 @@ opens in an incognito window.
    totals, but the buttons link to sign-in, and the action refuses them too.
 3. **Come back daily.** The home page crowns a Caption of the Day (the
    top-scoring caption on photos posted since midnight New York time), shows
-   the week's top five, and tells signed-in users how many captions they
-   haven't rated yet.
+   the week's top five, and tells signed-in users how many posts are new to
+   them (week 5).
 
 ### Designing for Sam
 
@@ -190,6 +208,42 @@ chronically online, and explores the city on weekends.
   vote totals and a 👑 on the leader, and be open about how each caption was
   made. This app does all three: captions are rated in context, and the "How
   these captions were made" panel shows the exact prompt and model.
+
+## Week 5: get feedback and iterate
+
+What changed, and why:
+
+- **New for you** (`/rate?tab=new`). Before, the home page's "N captions and
+  memes are waiting for your vote" counted single captions, so a photo you'd
+  already voted on could still count twice, and the link went to a feed where
+  you couldn't tell new posts from ones you'd already voted on. Now the count is of
+  *posts*, it matches the tab's badge, and the tab lists only other people's
+  posts you haven't rated. Rate a page, press **Next posts**, and nothing is
+  skipped. When there's nothing left: "You're all caught up!"
+- **A page for every meme** (`/m/[id]`), like photos already had. The home
+  page's Top memes open the meme itself instead of the whole Memes tab, and
+  feed titles link to it.
+- **Posting tells you it worked.** After posting a meme or a photo you land on
+  its page with "🎉 Your meme is live!" and a **Share** button (the phone's
+  share sheet on phones, copy-link elsewhere). Before, a new meme dropped you
+  into the feed with no confirmation.
+- **Your posts on Profile**, with the 👍 each one has received and a total,
+  so there's a reason to come back after posting.
+- **Visual pass.**
+  - The header and footer were in Arial while the pages used Geist; now it's
+    Geist everywhere.
+  - A soft grey page behind white cards, in light and dark mode.
+  - A sticky header with an app icon (also the favicon and home-screen icon)
+    and the current section highlighted.
+  - Photos and memes that don't fill their frame sit on a blurred copy of
+    themselves instead of grey or black bars.
+- **Usability fixes.**
+  - Bigger vote buttons on phones.
+  - "Change photo" is visible on touch screens (it only appeared on hover).
+  - A loading skeleton for `/rate`, and a spinner on nav and tab links while
+    the next page loads.
+  - A shorter `/rate` intro, so the feed starts higher on phones.
+  - A friendly 404 page.
 
 ## Development
 
