@@ -29,7 +29,7 @@ export default async function CreatePage({ searchParams }: PageProps<"/create">)
   const postedAs = `${viewer.profile!.first_name} ${viewer.profile!.last_name![0]}.`;
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-12 font-sans">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 font-sans sm:py-12">
       <h1 className="text-4xl font-semibold tracking-tight">Create</h1>
 
       <nav className="mt-6 flex gap-2" aria-label="What to create">
@@ -40,8 +40,8 @@ export default async function CreatePage({ searchParams }: PageProps<"/create">)
             aria-current={mode === key ? "page" : undefined}
             className={`rounded-full px-4 py-2 text-sm font-medium transition ${
               mode === key
-                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                : "border border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                ? "bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900"
+                : "border border-zinc-300 bg-surface hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
             }`}
           >
             {MODES[key].label}

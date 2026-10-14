@@ -76,13 +76,13 @@ export function CreateForm({ remaining }: { remaining: number }) {
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={pending}
-        className="group relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 text-zinc-500 transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-wait dark:border-zinc-700 dark:bg-zinc-900"
+        className="group relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-surface text-zinc-500 transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-wait dark:border-zinc-700"
       >
         {previewUrl ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={previewUrl} alt="Your photo" className="h-full w-full object-contain" />
-            <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1 text-sm text-white opacity-0 transition group-hover:opacity-100">
+            <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1 text-sm text-white transition group-focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
               Change photo
             </span>
           </>
@@ -114,7 +114,7 @@ export function CreateForm({ remaining }: { remaining: number }) {
               className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition has-focus-visible:ring-2 has-focus-visible:ring-blue-500/40 ${
                 vibe === key
                   ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40"
-                  : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-800"
+                  : "border-zinc-200 bg-surface hover:border-zinc-400 dark:border-zinc-800"
               }`}
             >
               <input

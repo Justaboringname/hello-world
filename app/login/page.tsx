@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { signInWithGoogle } from "@/app/auth/actions";
+import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
 import { getViewer } from "@/lib/auth";
 import { firstParam, safeNextPath } from "@/lib/redirect";
@@ -14,7 +15,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
   return (
     <main className="flex flex-1 items-center justify-center px-4 py-12 font-sans">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-200 p-8 text-center dark:border-zinc-800">
+      <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-surface p-8 text-center shadow-sm dark:border-zinc-800">
+        <Logo className="mx-auto mb-4 h-12 w-12" />
         <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
         <p className="mt-2 text-sm text-zinc-500">
           {isProtected(new URL(next, "http://x").pathname)

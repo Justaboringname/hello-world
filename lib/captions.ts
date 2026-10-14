@@ -95,9 +95,10 @@ export const MEME_TITLE_MAX_LENGTH = 80;
 export const MEME_TEXT_MAX_LENGTH = 100;
 export const DAILY_MEME_LIMIT = 20;
 
-// The three feeds on /rate.
+// The feeds on /rate. "new" is the signed-in user's unrated posts.
 export const RATE_TABS = {
   all: "All",
+  new: "✨ New for you",
   memes: "😂 Memes",
   photos: "📸 AI captions",
 } as const;

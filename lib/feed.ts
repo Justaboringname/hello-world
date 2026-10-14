@@ -70,7 +70,7 @@ async function feedRows(
 // show up on the first page even when there are many newer photos. The
 // rate_feed view (and RLS behind it) hides members-only memes from
 // signed-out visitors; the rows themselves are loaded per kind.
-export async function getRateFeed(page: number, tab: RateTab) {
+export async function getRateFeed(page: number, tab: Exclude<RateTab, "new">) {
   const supabase = await createClient();
 
   let pageRows: FeedRow[];
@@ -99,6 +99,15 @@ export async function getRateFeed(page: number, tab: RateTab) {
     hasMore = (data ?? []).length > FEED_PAGE_SIZE;
   }
 
+  const { error, items } = await loadFeedItems(supabase, pageRows);
+  return { error, items, hasMore: error ? false : hasMore };
+}
+
+// Loads the photos and memes behind a page of feed rows, in the rows' order.
+async function loadFeedItems(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  pageRows: FeedRow[],
+) {
   const ids = (kind: string) => pageRows.filter((row) => row.kind === kind).map((row) => row.id);
   const [photos, memes] = await Promise.all([
     ids("photo").length
@@ -108,8 +117,8 @@ export async function getRateFeed(page: number, tab: RateTab) {
       ? supabase.from("memes").select(MEME_COLUMNS).in("id", ids("meme"))
       : { data: [], error: null },
   ]);
-  const loadError = photos.error ?? memes.error;
-  if (loadError) return { error: loadError, items: [] as FeedItem[], hasMore: false };
+  const error = photos.error ?? memes.error;
+  if (error) return { error, items: [] as FeedItem[] };
 
   const photoById = new Map(((photos.data ?? []) as Generation[]).map((g) => [g.id, sortCaptions(g)]));
   const memeById = new Map(((memes.data ?? []) as Meme[]).map((m) => [m.id, m]));
@@ -121,7 +130,61 @@ export async function getRateFeed(page: number, tab: RateTab) {
       items.push({ kind: "meme", meme: memeById.get(row.id)! });
     }
   }
-  return { error: null, items, hasMore };
+  return { error: null, items };
+}
+
+// Where a page of the New for you tab starts: just after this row.
+export type UnratedCursor = { createdAt: string; kind: "photo" | "meme"; id: number };
+
+export function encodeCursor(cursor: UnratedCursor) {
+  return `${cursor.createdAt}~${cursor.kind}~${cursor.id}`;
+}
+
+export function parseCursor(value: string | undefined): UnratedCursor | null {
+  const [createdAt, kind, id] = (value ?? "").split("~");
+  if (!createdAt || Number.isNaN(Date.parse(createdAt))) return null;
+  if (kind !== "photo" && kind !== "meme") return null;
+  if (!/^\d{1,15}$/.test(id ?? "")) return null;
+  return { createdAt, kind, id: Number(id) };
+}
+
+// New for you: other people's posts this user hasn't rated, newest first
+// (supabase/new_for_you.sql). Pages by cursor rather than by number, because
+// rating a post takes it out of the list.
+export async function getUnratedFeed(before: UnratedCursor | null) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc(
+      "unrated_feed",
+      before
+        ? { before_created_at: before.createdAt, before_kind: before.kind, before_id: before.id }
+        : {},
+    )
+    .select("kind, id, created_at")
+    .order("created_at", { ascending: false })
+    .order("kind", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(FEED_PAGE_SIZE + 1);
+  if (error) return { error, items: [] as FeedItem[], next: null };
+
+  const allRows = (data ?? []) as (FeedRow & { created_at: string })[];
+  const rows = allRows.slice(0, FEED_PAGE_SIZE);
+  const last = rows.at(-1);
+  const next =
+    allRows.length > FEED_PAGE_SIZE && last
+      ? { createdAt: last.created_at, kind: last.kind as UnratedCursor["kind"], id: last.id }
+      : null;
+  const loaded = await loadFeedItems(supabase, rows);
+  return { error: loaded.error, items: loaded.items, next: loaded.error ? null : next };
+}
+
+// How many posts are waiting in New for you. Null when signed out, or when
+// supabase/new_for_you.sql hasn't been run yet.
+export async function getUnratedCount(userId: string | undefined) {
+  if (!userId) return null;
+  const supabase = await createClient();
+  const { count, error } = await supabase.rpc("unrated_feed", {}, { count: "exact", head: true });
+  return error ? null : (count ?? 0);
 }
 
 // Cached per request so generateMetadata and the page share one query.
@@ -189,27 +252,6 @@ export async function getTopCaptions(since: Date, limit: number) {
   return (data ?? []) as unknown as RankedCaption[];
 }
 
-// How many captions and memes this user hasn't voted on yet.
-export async function getUnratedCount(userId: string) {
-  const supabase = await createClient();
-  const [captions, captionVotes, memes, memeVotes] = await Promise.all([
-    supabase.from("captions").select("id", { count: "exact", head: true }),
-    supabase
-      .from("caption_votes")
-      .select("caption_id", { count: "exact", head: true })
-      .eq("user_id", userId),
-    supabase.from("memes").select("id", { count: "exact", head: true }),
-    supabase
-      .from("meme_votes")
-      .select("meme_id", { count: "exact", head: true })
-      .eq("user_id", userId),
-  ]);
-  return Math.max(
-    0,
-    (captions.count ?? 0) - (captionVotes.count ?? 0) + (memes.count ?? 0) - (memeVotes.count ?? 0),
-  );
-}
-
 // Photos this user captioned in the last 24 hours (for the daily limit).
 export async function countRecentGenerations(userId: string) {
   const supabase = await createClient();
@@ -253,4 +295,39 @@ export async function getTopMemes(limit: number) {
     .order("id", { ascending: false })
     .limit(limit);
   return (data ?? []) as Meme[];
+}
+
+// Cached per request so generateMetadata and the page share one query. RLS
+// returns nothing for a members-only meme when signed out.
+export const getMeme = cache(async (id: number) => {
+  const supabase = await createClient();
+  const { data } = await supabase.from("memes").select(MEME_COLUMNS).eq("id", id).maybeSingle<Meme>();
+  return data;
+});
+
+// What this user has posted, newest first, for their Profile page.
+export async function getMyPosts(userId: string, limit = 100) {
+  const supabase = await createClient();
+  const [photos, memes] = await Promise.all([
+    supabase
+      .from("generations")
+      .select(GENERATION_COLUMNS)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(limit),
+    supabase
+      .from("memes")
+      .select(MEME_COLUMNS)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(limit),
+  ]);
+  const items: FeedItem[] = [
+    ...((photos.data ?? []) as Generation[]).map((g) => ({ kind: "photo" as const, generation: sortCaptions(g) })),
+    ...((memes.data ?? []) as Meme[]).map((meme) => ({ kind: "meme" as const, meme })),
+  ];
+  const createdAt = (item: FeedItem) =>
+    item.kind === "photo" ? item.generation.created_at : item.meme.created_at;
+  items.sort((a, b) => createdAt(b).localeCompare(createdAt(a)));
+  return { error: photos.error ?? memes.error, items: items.slice(0, limit) };
 }

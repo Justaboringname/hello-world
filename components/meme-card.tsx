@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MemeImage } from "@/components/meme-image";
 import { VoteButtons } from "@/components/vote-buttons";
 import type { Meme, VoteValue } from "@/lib/captions";
@@ -9,23 +10,36 @@ export function MemeCard({
   myVote,
   signedIn,
   loginHref,
+  linkToDetail = true,
 }: {
   meme: Meme;
   myVote: VoteValue | null;
   signedIn: boolean;
   loginHref: string;
+  linkToDetail?: boolean;
 }) {
+  const detailHref = `/m/${meme.id}`;
+  const image = (
+    <MemeImage
+      src={memeImageUrl(meme)}
+      alt={meme.title}
+      topText={meme.top_text}
+      bottomText={meme.bottom_text}
+    />
+  );
+
   return (
-    <article className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-      <MemeImage
-        src={memeImageUrl(meme)}
-        alt={meme.title}
-        topText={meme.top_text}
-        bottomText={meme.bottom_text}
-      />
+    <article className="overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm dark:border-zinc-800">
+      {linkToDetail ? <Link href={detailHref} className="block">{image}</Link> : image}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="min-w-0 flex-1">
-          <p className="font-medium">{meme.title}</p>
+          {linkToDetail ? (
+            <Link href={detailHref} className="font-medium hover:underline">
+              {meme.title}
+            </Link>
+          ) : (
+            <p className="font-medium">{meme.title}</p>
+          )}
           <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
             {meme.image_path ? (
               <span>
