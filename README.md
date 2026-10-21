@@ -117,6 +117,19 @@ can do. See [`admin/README.md`](admin/README.md).
 The server also stamps `created_at` and the author name, so the client can't
 backdate a post or post under someone else's name.
 
+Superadmins (week 6, [`admin/supabase/admin.sql`](admin/supabase/admin.sql))
+get more on top of this table:
+- **Read** every profile and every vote.
+- **Edit** a photo's location and vibe, a caption's text, and a meme's text
+  and members-only flag. Column privileges keep everything else, vote totals
+  included, out of reach.
+- **Add and delete** captions, and **delete** photos, memes and their files
+  in the `photos` bucket.
+
+`profiles.is_superadmin` can only be changed from the SQL Editor. Votes and
+profiles also keep the server's `created_at` now, so the admin dashboard's
+numbers can't be backdated.
+
 ### 2. Google OAuth client (Google Cloud Console)
 
 APIs & Services → Credentials → Create credentials → OAuth client ID → Web
