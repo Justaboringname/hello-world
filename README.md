@@ -9,7 +9,10 @@ and vote on any of them, and the old members-only `/vault` became
 members-only memes ("Sign in to see more memes"). Week 5 is about coming
 back: a **New for you** tab with only the posts you haven't rated, a page for
 every meme, a "your posts" view on Profile, and a visual pass over the whole
-app.
+app. Week 6 adds an
+[admin panel](https://github.com/Justaboringname/hello-world-admin/blob/main/README.md):
+a second Next.js app in its own repository and Vercel project, for
+superadmins only.
 
 ## Routes
 
@@ -95,6 +98,13 @@ Until it has run, the rest of the app works; the New for you tab shows an
 error and the counts are hidden. The file ends with a check that should say
 `true, false` (signed-in users can run it, signed-out visitors can't).
 
+For the week 6 admin panel, run
+[`hello-world-admin/supabase/admin.sql`](https://github.com/Justaboringname/hello-world-admin/blob/main/supabase/admin.sql)
+last. It adds `profiles.is_superadmin` (which nobody can set from the app) and
+read/write policies for superadmins only. It doesn't change what anyone else
+can do. See
+[`hello-world-admin/README.md`](https://github.com/Justaboringname/hello-world-admin/blob/main/README.md).
+
 #### Row level security
 
 | Table / bucket  | Signed out | Signed in |
@@ -110,6 +120,20 @@ error and the counts are hidden. The file ends with a check that should say
 
 The server also stamps `created_at` and the author name, so the client can't
 backdate a post or post under someone else's name.
+
+Superadmins (week 6,
+[`hello-world-admin/supabase/admin.sql`](https://github.com/Justaboringname/hello-world-admin/blob/main/supabase/admin.sql))
+get more on top of this table:
+- **Read** every profile and every vote.
+- **Edit** a photo's location and vibe, a caption's text, and a meme's text
+  and members-only flag. Column privileges keep everything else, vote totals
+  included, out of reach.
+- **Add and delete** captions, and **delete** photos, memes and their files
+  in the `photos` bucket.
+
+`profiles.is_superadmin` can only be changed from the SQL Editor. Votes and
+profiles also keep the server's `created_at` now, so the admin dashboard's
+numbers can't be backdated.
 
 ### 2. Google OAuth client (Google Cloud Console)
 
@@ -244,6 +268,14 @@ What changed, and why:
     the next page loads.
   - A shorter `/rate` intro, so the feed starts higher on phones.
   - A friendly 404 page.
+
+## Week 6: admin panel
+
+The admin panel lives in
+[hello-world-admin](https://github.com/Justaboringname/hello-world-admin) and
+deploys as its own Vercel project. Its README covers the setup, how every
+route is kept behind Google sign-in plus `profiles.is_superadmin`, and how the
+first admin gets in without being locked out.
 
 ## Development
 
