@@ -9,8 +9,10 @@ and vote on any of them, and the old members-only `/vault` became
 members-only memes ("Sign in to see more memes"). Week 5 is about coming
 back: a **New for you** tab with only the posts you haven't rated, a page for
 every meme, a "your posts" view on Profile, and a visual pass over the whole
-app. Week 6 adds an [admin panel](admin/README.md): a second Next.js app in
-`admin/`, on its own Vercel project, for superadmins only.
+app. Week 6 adds an
+[admin panel](https://github.com/Justaboringname/hello-world-admin/blob/main/README.md):
+a second Next.js app in its own repository and Vercel project, for
+superadmins only.
 
 ## Routes
 
@@ -96,10 +98,12 @@ Until it has run, the rest of the app works; the New for you tab shows an
 error and the counts are hidden. The file ends with a check that should say
 `true, false` (signed-in users can run it, signed-out visitors can't).
 
-For the week 6 admin panel, run [`admin/supabase/admin.sql`](admin/supabase/admin.sql)
+For the week 6 admin panel, run
+[`hello-world-admin/supabase/admin.sql`](https://github.com/Justaboringname/hello-world-admin/blob/main/supabase/admin.sql)
 last. It adds `profiles.is_superadmin` (which nobody can set from the app) and
 read/write policies for superadmins only. It doesn't change what anyone else
-can do. See [`admin/README.md`](admin/README.md).
+can do. See
+[`hello-world-admin/README.md`](https://github.com/Justaboringname/hello-world-admin/blob/main/README.md).
 
 #### Row level security
 
@@ -117,7 +121,8 @@ can do. See [`admin/README.md`](admin/README.md).
 The server also stamps `created_at` and the author name, so the client can't
 backdate a post or post under someone else's name.
 
-Superadmins (week 6, [`admin/supabase/admin.sql`](admin/supabase/admin.sql))
+Superadmins (week 6,
+[`hello-world-admin/supabase/admin.sql`](https://github.com/Justaboringname/hello-world-admin/blob/main/supabase/admin.sql))
 get more on top of this table:
 - **Read** every profile and every vote.
 - **Edit** a photo's location and vibe, a caption's text, and a meme's text
@@ -266,11 +271,11 @@ What changed, and why:
 
 ## Week 6: admin panel
 
-The admin panel lives in [`admin/`](admin/) and deploys as a second Vercel
-project from this repository (Root Directory: `admin`). Its README covers the
-setup, how every route is kept behind Google sign-in plus
-`profiles.is_superadmin`, and how the first admin gets in without being locked
-out.
+The admin panel lives in
+[hello-world-admin](https://github.com/Justaboringname/hello-world-admin) and
+deploys as its own Vercel project. Its README covers the setup, how every
+route is kept behind Google sign-in plus `profiles.is_superadmin`, and how the
+first admin gets in without being locked out.
 
 ## Development
 

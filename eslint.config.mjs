@@ -12,8 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // The admin panel is its own Next.js app with its own lint config.
-    "admin/**",
   ]),
 ]);
 
