@@ -32,6 +32,12 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   };
 });
 
+// The email/password sign-in for a local Supabase stack. Never on in a
+// production build, whatever the env says.
+export function devPasswordLoginEnabled() {
+  return process.env.NODE_ENV === "development" && process.env.ENABLE_PASSWORD_LOGIN === "true";
+}
+
 // Server-side gate for protected pages. proxy.ts redirects first, but the page
 // must not trust that alone.
 export async function requireViewer(currentPath: string) {
