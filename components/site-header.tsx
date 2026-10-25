@@ -17,10 +17,10 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/85 backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/80">
-      <nav className="mx-auto flex w-full max-w-4xl items-center gap-1 px-4 py-2.5 text-sm sm:gap-2">
+      <nav className="mx-auto flex w-full max-w-4xl items-center gap-0.5 px-4 py-2.5 text-sm sm:gap-2">
         <Link href="/" className="mr-1 flex items-center gap-2 whitespace-nowrap font-semibold sm:mr-3">
           <Logo />
-          <span className="hidden min-[400px]:inline">Hello World</span>
+          <span className="hidden min-[440px]:inline">Hello World</span>
         </Link>
         <NavLinks />
 

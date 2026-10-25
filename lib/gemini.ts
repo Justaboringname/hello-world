@@ -1,5 +1,5 @@
 import "server-only";
-import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { ApiError, GoogleGenAI, ThinkingLevel, type ContentListUnion } from "@google/genai";
 import { VIBES, type Vibe } from "@/lib/captions";
 
 // Flash-Lite models get about 500 free requests a day per project, Flash
@@ -61,14 +61,76 @@ export async function generateCaptions({
   vibe: Vibe;
   location: string | null;
 }): Promise<CaptionResult> {
+  const prompt = buildPrompt(vibe, location);
+  let result: GeminiJsonResult;
+  try {
+    result = await generateJson({
+      contents: [{ inlineData: { data: image.toString("base64"), mimeType } }, prompt],
+      systemInstruction: SYSTEM_PROMPT,
+      responseJsonSchema: {
+        type: "object",
+        properties: {
+          captions: {
+            type: "array",
+            items: { type: "string" },
+            minItems: CAPTION_COUNT,
+            maxItems: CAPTION_COUNT,
+          },
+        },
+        required: ["captions"],
+      },
+    });
+  } catch (error) {
+    if (!(error instanceof GeminiCallError)) throw error;
+    throw new CaptionError(
+      error.reason === "missing-key"
+        ? "Caption generation isn't set up yet (missing GEMINI_API_KEY)."
+        : error.reason === "busy"
+          ? "Gemini is overloaded right now. Wait a minute and try again."
+          : "Gemini couldn't caption that photo. Please try again.",
+    );
+  }
+
+  const captions = parseCaptions(result.text);
+  if (captions.length === 0) {
+    throw new CaptionError(
+      "Gemini didn't return any captions for that photo. Try a different one.",
+    );
+  }
+  return { captions, systemPrompt: SYSTEM_PROMPT, prompt, model: result.model };
+}
+
+// Why a Gemini call gave up: no key, the models were busy (rate limits,
+// overloads, timeouts), or any other failure.
+export class GeminiCallError extends Error {
+  constructor(readonly reason: "missing-key" | "busy" | "failed") {
+    super(`Gemini call failed: ${reason}`);
+  }
+}
+
+export type GeminiJsonResult = { text: string | undefined; model: string };
+
+// One JSON-mode request with the retry, fallback-model and deadline policy
+// described at the top of this file. Returns the first answer any model gives
+// (the caller parses it) and which model gave it.
+export async function generateJson({
+  contents,
+  systemInstruction,
+  responseJsonSchema,
+  thinkingLevel = ThinkingLevel.LOW,
+}: {
+  contents: ContentListUnion;
+  systemInstruction: string;
+  responseJsonSchema: unknown;
+  thinkingLevel?: ThinkingLevel;
+}): Promise<GeminiJsonResult> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey) throw new CaptionError("Caption generation isn't set up yet (missing GEMINI_API_KEY).");
+  if (!apiKey) throw new GeminiCallError("missing-key");
 
   // Always two different models: the first choice, then the next default.
   const models = [
     ...new Set([process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL, DEFAULT_MODEL, FALLBACK_MODEL]),
   ].slice(0, 2);
-  const prompt = buildPrompt(vibe, location);
   const ai = new GoogleGenAI({ apiKey });
   const deadline = AbortSignal.timeout(DEADLINE_MS);
 
@@ -79,31 +141,16 @@ export async function generateCaptions({
     const signal = isLast
       ? deadline
       : AbortSignal.any([deadline, AbortSignal.timeout(MODEL_BUDGET_MS)]);
-    let text: string | undefined;
     try {
       const response = await ai.models.generateContent({
         model,
-        contents: [
-          { inlineData: { data: image.toString("base64"), mimeType } },
-          prompt,
-        ],
+        contents,
         config: {
-          systemInstruction: SYSTEM_PROMPT,
+          systemInstruction,
           responseMimeType: "application/json",
-          responseJsonSchema: {
-            type: "object",
-            properties: {
-              captions: {
-                type: "array",
-                items: { type: "string" },
-                minItems: CAPTION_COUNT,
-                maxItems: CAPTION_COUNT,
-              },
-            },
-            required: ["captions"],
-          },
-          // Short captions don't need long reasoning, and users are waiting.
-          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          responseJsonSchema,
+          // Short answers don't need long reasoning, and users are waiting.
+          thinkingConfig: { thinkingLevel },
           abortSignal: signal,
           httpOptions: {
             timeout: ATTEMPT_TIMEOUT_MS,
@@ -116,28 +163,16 @@ export async function generateCaptions({
           },
         },
       });
-      text = response.text;
+      return { text: response.text, model };
     } catch (error) {
       console.error(`Gemini request to ${model} failed`, error);
       lastError = error;
       if (worthAnotherModel(error)) continue;
       break;
     }
-
-    const captions = parseCaptions(text);
-    if (captions.length === 0) {
-      throw new CaptionError(
-        "Gemini didn't return any captions for that photo. Try a different one.",
-      );
-    }
-    return { captions, systemPrompt: SYSTEM_PROMPT, prompt, model };
   }
 
-  throw new CaptionError(
-    isBusy(lastError)
-      ? "Gemini is overloaded right now. Wait a minute and try again."
-      : "Gemini couldn't caption that photo. Please try again.",
-  );
+  throw new GeminiCallError(isBusy(lastError) ? "busy" : "failed");
 }
 
 // A request that was cut off by our timeout or deadline.

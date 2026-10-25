@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { devPasswordLoginEnabled } from "@/lib/auth";
 import { NEXT_PATH_COOKIE, safeNextPath } from "@/lib/redirect";
 import { createClient } from "@/lib/supabase/server";
 
@@ -43,6 +44,22 @@ export async function signInWithGoogle(formData: FormData) {
   });
 
   redirect(data.url);
+}
+
+// Local development only: sign in a Supabase email/password test user, so a
+// local Supabase stack works without a Google OAuth client.
+export async function signInWithPassword(formData: FormData) {
+  const next = safeNextPath(formData.get("next"));
+  if (!devPasswordLoginEnabled()) redirect("/login");
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
+  });
+  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/", "layout");
+  redirect(next);
 }
 
 export async function signOut() {

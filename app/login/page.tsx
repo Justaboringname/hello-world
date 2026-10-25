@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { signInWithGoogle } from "@/app/auth/actions";
+import { signInWithGoogle, signInWithPassword } from "@/app/auth/actions";
 import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
-import { getViewer } from "@/lib/auth";
+import { devPasswordLoginEnabled, getViewer } from "@/lib/auth";
 import { firstParam, safeNextPath } from "@/lib/redirect";
 import { isProtected } from "@/lib/supabase/proxy";
 
@@ -34,6 +34,20 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             Continue with Google
           </SubmitButton>
         </form>
+
+        {devPasswordLoginEnabled() && (
+          <form action={signInWithPassword} className="mt-6 flex flex-col gap-2 border-t border-zinc-200 pt-6 text-left dark:border-zinc-800">
+            <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">
+              Local dev: email &amp; password
+            </p>
+            <input type="hidden" name="next" value={next} />
+            <input name="email" type="email" autoComplete="username" placeholder="Email" className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900" />
+            <input name="password" type="password" autoComplete="current-password" placeholder="Password" className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900" />
+            <SubmitButton pendingLabel="Signing in…" className="border border-zinc-300 px-5 py-2.5 dark:border-zinc-700">
+              Sign in with password
+            </SubmitButton>
+          </form>
+        )}
 
         {error && (
           <p role="alert" className="mt-4 text-sm text-red-600">
