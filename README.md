@@ -21,6 +21,7 @@ superadmins only.
 | `/`              | public    | Caption of the Day, this week's top captions, top memes, and "N new posts are waiting for your vote" when signed in. Signed-out visitors also get a three-step "how it works" |
 | `/rate`          | public    | Tabs: All, ✨ New for you (`?tab=new`, signed in), 😂 Memes (`?tab=memes`) and 📸 AI captions (`?tab=photos`), newest first. Voting needs sign-in. Signed-out visitors see the public memes and a "Sign in to see N more memes" card at the top; signed-in users also see the members-only memes |
 | `/p/[id]`        | public    | One photo: shareable link, votes, and the exact prompt and model used |
+| `/duel`          | public    | Beat the bot: today's photo (or `?photo=<id>`). Signed-in users write one caption (up to 3 tries) and a blind Gemini judge compares it with Gemini's own. Gemini's captions stay hidden until the duel is over |
 | `/m/[id]`        | public    | One meme: shareable link and votes. A members-only meme asks signed-out visitors to sign in |
 | `/create`        | signed in | ✨ AI captions: upload a photo, pick a vibe, get three Gemini captions (10 a day). 😂 Make a meme (`?mode=meme`): upload an image, add top/bottom text with a live preview, post it (20 a day). Either way you land on the new post's page with a "🎉 Posted!" banner and a Share button |
 | `/login`         | public    | "Continue with Google"                                             |
@@ -98,6 +99,20 @@ Until it has run, the rest of the app works; the New for you tab shows an
 error and the counts are hidden. The file ends with a check that should say
 `true, false` (signed-in users can run it, signed-out visitors can't).
 
+For the semester project (Beat the bot), run
+[`supabase/duels.sql`](supabase/duels.sql) after `captions.sql`. It is safe to
+re-run. It creates:
+
+- `duels`: one row per judged try, with the user's line, the bot's line,
+  which label (A or B) the user's line had, the judge's full verdict, the
+  model and the exact prompt. One row per (user, photo, try), tries 1–3
+- `duel_attempts` and `reserve_duel_attempt()`: every judge call is reserved
+  first, under a per-user lock, so the 20-a-day and 3-per-photo limits count
+  Gemini calls even when someone submits from several tabs at once
+- No insert, update or delete policies for users on either table: the server
+  writes them with the service-role key after the judge answers, so nobody can
+  record a win the judge didn't give
+
 For the week 6 admin panel, run
 [`hello-world-admin/supabase/admin.sql`](https://github.com/Justaboringname/hello-world-admin/blob/main/supabase/admin.sql)
 last. It adds `profiles.is_superadmin` (which nobody can set from the app) and
@@ -115,6 +130,8 @@ can do. See
 | `generations`   | read       | read; create only as yourself, with a photo from your own Storage folder. No edits or deletes |
 | `captions`      | read       | read; add only to your own generations, starting at 0 votes. No edits or deletes. Totals change only through the vote trigger |
 | `caption_votes` | no access  | read, cast, change and remove **own** votes only |
+| `duels`         | no access  | read **own** tries only. No writes: the server records verdicts with the service-role key |
+| `duel_attempts` | no access  | no access (server only) |
 | `photos` bucket | view by URL | upload into `photos/<your user id>/` only. No overwrite or delete, so a photo can't be swapped after people vote on it |
 | `avatars` bucket | view by URL | read and write inside `avatars/<your user id>/` only |
 
@@ -169,6 +186,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon or publishable key>
 GEMINI_API_KEY=<key from https://aistudio.google.com/apikey>
 # Optional. The model to try first; defaults to gemini-3.5-flash-lite.
 GEMINI_MODEL=
+# Server-only, needed for /duel (Supabase → Project Settings → API keys →
+# service_role / secret). Add it to Vercel as a Sensitive variable.
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 `GEMINI_API_KEY` has no `NEXT_PUBLIC_` prefix, so it stays on the server. The

@@ -68,8 +68,14 @@ export default async function GenerationPage({ params, searchParams }: PageProps
       <div className="mt-6 flex flex-wrap items-center gap-3">
         {!posted && <CopyLinkButton path={`/p/${id}`} />}
         <Link
-          href="/create"
+          href={`/duel?photo=${id}`}
           className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+        >
+          🤖 Beat the bot on this photo
+        </Link>
+        <Link
+          href="/create"
+          className="rounded-full border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           Caption your own photo
         </Link>

@@ -37,6 +37,22 @@ export function startOfTodayInNewYork(now = new Date()) {
   return new Date(now.getTime() - sinceMidnight);
 }
 
+// Days since 1970-01-01 by the New York calendar: the same number all day in
+// New York, one higher after its midnight.
+export function newYorkDayNumber(now = new Date()) {
+  const { year, month, day } = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    })
+      .formatToParts(now)
+      .map((part) => [part.type, Number(part.value)]),
+  );
+  return Math.floor(Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000));
+}
+
 export function daysAgo(days: number, now = Date.now()) {
   return new Date(now - days * 24 * 60 * 60 * 1000);
 }
