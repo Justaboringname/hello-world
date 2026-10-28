@@ -214,8 +214,9 @@ Gemini sometimes answers `503 UNAVAILABLE` ("high demand") or `429` (rate
 limit). [`lib/gemini.ts`](lib/gemini.ts) retries the same model once, then
 hands the request to a second model (`gemini-3.1-flash-lite`, which has its
 own quota). Any other API error, a timeout or a dropped connection also hands
-off. Each attempt times out after 20 s, the first model gets at most 30 s so
-the fallback always has a full attempt, and the whole thing (Claude included) gives up
+off. Each attempt times out after 20 s, the first model is cut off 20 s before
+the deadline so the fallback always has a full attempt (however long Claude
+took), and the whole thing (Claude included) gives up
 after 50 s, inside the 60 s the `/create` page allows. The model that actually answered is saved with the
 captions and shown on the photo's page.
 

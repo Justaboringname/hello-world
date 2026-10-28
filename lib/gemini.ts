@@ -20,8 +20,8 @@ const ATTEMPT_TIMEOUT_MS = 20_000;
 // /create allows 60 s (maxDuration); leave time to upload and save afterwards.
 // For captions, Claude and Gemini share this deadline.
 const DEADLINE_MS = 50_000;
-// A model that stalls stops here, so the last one still gets a full attempt.
-const MODEL_BUDGET_MS = DEADLINE_MS - ATTEMPT_TIMEOUT_MS;
+// A model that stalls is cut off one full attempt before the deadline, so the
+// last one still gets that attempt, however much of the deadline Claude used.
 
 const CAPTION_COUNT = 3;
 const CAPTION_MAX_LENGTH = 200;
@@ -52,8 +52,8 @@ function buildPrompt(vibe: Vibe, location: string | null) {
 }
 
 // Claude's structured outputs need additionalProperties: false and don't take
-// minItems/maxItems, so there the prompt asks for the count. parseCaptions
-// enforces it for both models.
+// minItems/maxItems, so there only the prompt asks for the count. For both
+// models, parseCaptions keeps at most that many.
 const CLAUDE_CAPTIONS_SCHEMA = {
   type: "object",
   properties: { captions: { type: "array", items: { type: "string" } } },
@@ -77,7 +77,7 @@ export async function generateCaptions({
 }): Promise<CaptionResult> {
   const prompt = buildPrompt(vibe, location);
   // Claude stops after its share (lib/claude.ts); Gemini gets what's left.
-  const deadline = AbortSignal.timeout(DEADLINE_MS);
+  const deadlineAt = Date.now() + DEADLINE_MS;
 
   try {
     const answer = await claudeJson({
@@ -86,7 +86,7 @@ export async function generateCaptions({
       system: SYSTEM_PROMPT,
       prompt,
       schema: CLAUDE_CAPTIONS_SCHEMA,
-      signal: deadline,
+      signal: AbortSignal.timeout(DEADLINE_MS),
     });
     const captions = parseCaptions(answer.text);
     if (captions.length > 0) {
@@ -117,7 +117,7 @@ export async function generateCaptions({
         },
         required: ["captions"],
       },
-      deadline,
+      deadlineAt,
     });
   } catch (error) {
     if (!(error instanceof GeminiCallError)) throw error;
@@ -152,19 +152,19 @@ export type GeminiJsonResult = { text: string | undefined; model: string };
 // One JSON-mode request with the retry, fallback-model and deadline policy
 // described at the top of this file. Returns the first answer any model gives
 // (the caller parses it) and which model gave it. A caller that already spent
-// part of the deadline (on Claude) passes it in.
+// part of the deadline (on Claude) passes in when it ends.
 export async function generateJson({
   contents,
   systemInstruction,
   responseJsonSchema,
   thinkingLevel = ThinkingLevel.LOW,
-  deadline = AbortSignal.timeout(DEADLINE_MS),
+  deadlineAt = Date.now() + DEADLINE_MS,
 }: {
   contents: ContentListUnion;
   systemInstruction: string;
   responseJsonSchema: unknown;
   thinkingLevel?: ThinkingLevel;
-  deadline?: AbortSignal;
+  deadlineAt?: number;
 }): Promise<GeminiJsonResult> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new GeminiCallError("missing-key");
@@ -174,14 +174,14 @@ export async function generateJson({
     ...new Set([process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL, DEFAULT_MODEL, FALLBACK_MODEL]),
   ].slice(0, 2);
   const ai = new GoogleGenAI({ apiKey });
+  const deadline = AbortSignal.timeout(Math.max(0, deadlineAt - Date.now()));
 
   let lastError: unknown;
   for (const [index, model] of models.entries()) {
     if (deadline.aborted) break;
     const isLast = index === models.length - 1;
-    const signal = isLast
-      ? deadline
-      : AbortSignal.any([deadline, AbortSignal.timeout(MODEL_BUDGET_MS)]);
+    const budget = Math.max(0, deadlineAt - Date.now() - ATTEMPT_TIMEOUT_MS);
+    const signal = isLast ? deadline : AbortSignal.any([deadline, AbortSignal.timeout(budget)]);
     try {
       const response = await ai.models.generateContent({
         model,

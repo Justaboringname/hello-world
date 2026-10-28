@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-12 font-sans leading-relaxed">
       <h1 className="text-4xl font-semibold tracking-tight">Privacy Policy</h1>
-      <p className="mt-2 text-sm text-zinc-500">Last updated: October 7, 2026</p>
+      <p className="mt-2 text-sm text-zinc-500">Last updated: October 28, 2026</p>
 
       <p className="mt-6">
         Hello World is a student project built for a university course. This page
@@ -32,8 +32,9 @@ export default function PrivacyPage() {
         Photos and memes you post are public, together with their captions, the
         location you typed, and your first name and last initial. To write the captions,
         the photo and location are sent to Anthropic&apos;s Claude API, or to
-        Google&apos;s Gemini API when Claude can&apos;t answer. Google may
-        use content sent to its free tier to improve its products, so please
+        Google&apos;s Gemini API when Claude can&apos;t answer. In Beat the bot,
+        the photo and the caption you write are sent to Google&apos;s Gemini API
+        to judge it. Google may use content sent to its free tier to improve its products, so please
         don&apos;t post photos of people who haven&apos;t agreed to it. Your
         individual votes are private; only the totals are shown.
       </p>
