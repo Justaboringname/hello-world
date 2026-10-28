@@ -3,7 +3,7 @@
 A Next.js app on Vercel backed by Supabase. Week 2 added a public memes page;
 week 3 added Google sign-in, a `profiles` table, a Profile page, and a
 members-only route. Week 4 turns it into a rating app: signed-in users post a
-photo, Gemini writes three captions for it, and everyone votes on the funniest
+photo, AI writes three captions for it, and everyone votes on the funniest
 one. Memes live in the same `/rate` feed: anyone signed in can post their own
 and vote on any of them, and the old members-only `/vault` became
 members-only memes ("Sign in to see more memes"). Week 5 is about coming
@@ -21,9 +21,9 @@ superadmins only.
 | `/`              | public    | Caption of the Day, this week's top captions, top memes, and "N new posts are waiting for your vote" when signed in. Signed-out visitors also get a three-step "how it works" |
 | `/rate`          | public    | Tabs: All, ✨ New for you (`?tab=new`, signed in), 😂 Memes (`?tab=memes`) and 📸 AI captions (`?tab=photos`), newest first. Voting needs sign-in. Signed-out visitors see the public memes and a "Sign in to see N more memes" card at the top; signed-in users also see the members-only memes |
 | `/p/[id]`        | public    | One photo: shareable link, votes, and the exact prompt and model used |
-| `/duel`          | public    | Beat the bot: today's photo (or `?photo=<id>`). Signed-in users write one caption (up to 3 tries) and a blind Gemini judge compares it with Gemini's own. Gemini's captions stay hidden until the duel is over |
+| `/duel`          | public    | Beat the bot: today's photo (or `?photo=<id>`). Signed-in users write one caption (up to 3 tries) and a blind Gemini judge compares it with the bot's. The bot's captions stay hidden until the duel is over |
 | `/m/[id]`        | public    | One meme: shareable link and votes. A members-only meme asks signed-out visitors to sign in |
-| `/create`        | signed in | ✨ AI captions: upload a photo, pick a vibe, get three Gemini captions (10 a day). 😂 Make a meme (`?mode=meme`): upload an image, add top/bottom text with a live preview, post it (20 a day). Either way you land on the new post's page with a "🎉 Posted!" banner and a Share button |
+| `/create`        | signed in | ✨ AI captions: upload a photo, pick a vibe, get three AI captions (Claude, or Gemini as the fallback; 10 a day). 😂 Make a meme (`?mode=meme`): upload an image, add top/bottom text with a live preview, post it (20 a day). Either way you land on the new post's page with a "🎉 Posted!" banner and a Share button |
 | `/login`         | public    | "Continue with Google"                                             |
 | `/auth/callback` | public    | OAuth redirect URI; exchanges the code for a session cookie        |
 | `/onboarding`    | signed in | Asks for first/last name if either is still empty after sign-in    |
@@ -58,7 +58,7 @@ the `memes` table and its five starter memes. Then run
 Then run [`supabase/captions.sql`](supabase/captions.sql) for week 4. It creates:
 
 - `generations`: one row per posted photo, with the vibe, location, and the
-  exact system prompt, prompt and model sent to Gemini
+  exact system prompt, prompt and the model that answered (Claude or Gemini)
 - `captions`: the AI captions for each photo, with `upvotes`, `downvotes` and
   `score` totals
 - `caption_votes`: one row per (caption, user), `vote` is `1` or `-1`. A trigger
@@ -183,6 +183,9 @@ In `.env.local` and in Vercel (Settings → Environment Variables):
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon or publishable key>
+# Claude Opus 5.5 writes the captions first. Without this key, or whenever
+# Claude can't answer, Gemini does.
+ANTHROPIC_API_KEY=<key from the Claude Console>
 GEMINI_API_KEY=<key from https://aistudio.google.com/apikey>
 # Optional. The model to try first; defaults to gemini-3.5-flash-lite.
 GEMINI_MODEL=
@@ -191,8 +194,16 @@ GEMINI_MODEL=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-`GEMINI_API_KEY` has no `NEXT_PUBLIC_` prefix, so it stays on the server. The
-browser never calls Gemini directly.
+`ANTHROPIC_API_KEY` and `GEMINI_API_KEY` have no `NEXT_PUBLIC_` prefix, so they
+stay on the server. The browser never calls Claude or Gemini directly.
+
+Captions come from Claude Opus 5.5 first ([`lib/claude.ts`](lib/claude.ts)):
+one request with the photo and the same prompts, structured output for the
+JSON, low effort so it answers quickly, and Anthropic's server-side fallback
+for a safety decline. Claude gets at most 22 s. If it has no key, errors,
+times out, declines or returns no usable captions, Gemini takes over with the
+time that's left, as described below. The Beat the Bot judge
+([`lib/judge.ts`](lib/judge.ts)) still runs on Gemini only.
 
 On a free AI Studio key, Flash-Lite models get roughly 500 requests a day per
 project and Flash models (e.g. `gemini-3.8-flash`) roughly 20, so the app uses
@@ -204,8 +215,8 @@ limit). [`lib/gemini.ts`](lib/gemini.ts) retries the same model once, then
 hands the request to a second model (`gemini-3.1-flash-lite`, which has its
 own quota). Any other API error, a timeout or a dropped connection also hands
 off. Each attempt times out after 20 s, the first model gets at most 30 s so
-the fallback always has a full attempt, and the whole thing gives up after
-50 s, inside the 60 s the `/create` page allows. The model that actually answered is saved with the
+the fallback always has a full attempt, and the whole thing (Claude included) gives up
+after 50 s, inside the 60 s the `/create` page allows. The model that actually answered is saved with the
 captions and shown on the photo's page.
 
 ### 5. Vercel
@@ -218,10 +229,11 @@ opens in an incognito window.
 1. **Create.** On `/create` the browser shrinks the photo to at most 1600 px
    (phone photos are often 5–15 MB) and sends it to the `createGeneration`
    Server Action ([`app/create/actions.ts`](app/create/actions.ts)). The action
-   checks the session and the daily limit, sends the photo and prompt to Gemini
-   ([`lib/gemini.ts`](lib/gemini.ts)) asking for JSON with exactly three
-   captions, and only after that succeeds uploads the photo and calls
-   `create_generation`. If Gemini fails, nothing is stored.
+   checks the session and the daily limit, sends the photo and prompt to Claude,
+   or to Gemini when Claude can't answer ([`lib/gemini.ts`](lib/gemini.ts)),
+   asking for JSON with exactly three captions, and only after that succeeds
+   uploads the photo and calls `create_generation`. If both fail, nothing is
+   stored.
 2. **Rate.** `/rate` mixes the photos and the memes in one feed. Every
    caption and every meme has 👍/👎 buttons. Clicking one calls `castVote`
    ([`app/rate/actions.ts`](app/rate/actions.ts)), which upserts the user's row

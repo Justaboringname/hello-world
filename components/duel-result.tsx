@@ -54,7 +54,7 @@ export function DuelResultCard({ result, latest }: { result: DuelResult; latest:
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Side who={`You (${result.humanLabel})`} side={result.human} won={result.winner === "human"} />
         <Side
-          who={`Gemini (${result.humanLabel === "A" ? "B" : "A"})`}
+          who={`The bot (${result.humanLabel === "A" ? "B" : "A"})`}
           side={result.bot}
           won={result.winner === "bot"}
         />

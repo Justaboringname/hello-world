@@ -38,7 +38,7 @@ export default async function Home() {
           Snap the city. Vote on what&apos;s funny.
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-zinc-600 dark:text-zinc-400">
-          Post a meme, or a photo from your week in New York and let Gemini write
+          Post a meme, or a photo from your week in New York and let AI write
           three captions for it. Everyone votes, and the best caption each day is
           Caption of the Day.
         </p>
@@ -99,7 +99,7 @@ export default async function Home() {
         <ol className="mt-10 grid gap-3 sm:grid-cols-3">
           {[
             ["📸", "Snap the city", "Post a photo from your week, or a meme you made."],
-            ["✨", "Gemini captions it", "Pick a vibe and get three AI captions in seconds."],
+            ["✨", "AI captions it", "Pick a vibe and get three AI captions in seconds."],
             ["👍", "Everyone votes", "The funniest caption each day is Caption of the Day."],
           ].map(([emoji, title, body], index) => (
             <li

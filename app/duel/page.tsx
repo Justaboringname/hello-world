@@ -13,7 +13,7 @@ import { firstParam } from "@/lib/redirect";
 
 export const metadata: Metadata = {
   title: "Beat the bot · Hello World",
-  description: "Write a funnier caption than Gemini. A blind AI judge decides.",
+  description: "Write a funnier caption than the bot. A blind AI judge decides.",
 };
 
 // The judge's Gemini call runs inside this page's Server Action; give it room.
@@ -24,7 +24,7 @@ function parseId(value: string | undefined) {
 }
 
 // Beat the Bot: today's photo (or ?photo=<id>), the user's tries on it, and
-// the box for the next one. Gemini's captions stay hidden until the duel is
+// the box for the next one. The bot's captions stay hidden until the duel is
 // over, so nobody can just reword the bot's line.
 export default async function DuelPage({ searchParams }: PageProps<"/duel">) {
   const requested = parseId(firstParam((await searchParams).photo));
@@ -60,7 +60,7 @@ export default async function DuelPage({ searchParams }: PageProps<"/duel">) {
       </p>
       <h1 className="mt-2 text-4xl font-semibold tracking-tight">🤖 Beat the bot</h1>
       <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">
-        Write a funnier caption for this photo than Gemini did. A Gemini judge
+        Write a funnier caption for this photo than the bot did. A Gemini judge
         reads both lines as A and B without knowing which one is yours, scores
         them, and coaches you. You get {TRIES_PER_PHOTO} tries.
       </p>
@@ -81,7 +81,7 @@ export default async function DuelPage({ searchParams }: PageProps<"/duel">) {
           )}
           <span>{generation.author_name ? `by ${generation.author_name}` : "anonymous"}</span>
           <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs dark:bg-zinc-800">
-            Gemini wrote as: {vibeLabel(generation.vibe)}
+            The bot wrote as: {vibeLabel(generation.vibe)}
           </span>
         </figcaption>
       </figure>
@@ -105,7 +105,7 @@ export default async function DuelPage({ searchParams }: PageProps<"/duel">) {
 
         {over && (
           <section className="rounded-2xl border border-zinc-200 bg-surface p-5 shadow-sm dark:border-zinc-800">
-            <h2 className="font-semibold">All of Gemini&apos;s captions for this photo</h2>
+            <h2 className="font-semibold">All of the bot&apos;s captions for this photo</h2>
             <p className="mt-1 text-sm text-zinc-500">
               The bot played the one marked {"🤖"}. Vote on them on the photo&apos;s page.
             </p>

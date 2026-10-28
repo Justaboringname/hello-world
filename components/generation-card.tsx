@@ -67,7 +67,7 @@ export function GenerationCard({
         </p>
 
         <p className="mt-3 text-sm text-zinc-500">
-          ✨ Gemini&apos;s captions. 👍 the ones that made you laugh:
+          ✨ AI captions. 👍 the ones that made you laugh:
         </p>
         <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
           {generation.captions.map((caption) => (

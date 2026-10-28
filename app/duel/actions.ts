@@ -26,7 +26,7 @@ const RESERVE_ERRORS: Record<string, string> = {
 
 // One try at beating the bot: check the rules, reserve the try in the
 // database (so the limits count judge calls, even parallel ones), have the
-// judge compare the line with Gemini's caption in random A/B order, then save
+// judge compare the line with the bot's caption in random A/B order, then save
 // the verdict with the service-role client. A try the judge never answered is
 // marked failed, so it doesn't use up one of the user's tries.
 export async function submitDuel(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -66,12 +66,12 @@ export async function submitDuel(_prev: FormState, formData: FormData): Promise<
       generation.captions,
       await getMyVotes(userId, generation.captions.map((caption) => caption.id)),
     );
-  if (!bot) return { status: "error", message: "This photo has no Gemini caption to beat yet." };
+  if (!bot) return { status: "error", message: "This photo has no AI caption to beat yet." };
 
   if (isNearCopy(text, generation.captions.map((caption) => caption.text))) {
     return {
       status: "error",
-      message: "That's (almost) one of Gemini's own captions for this photo. Write your own!",
+      message: "That's (almost) one of the bot's own captions for this photo. Write your own!",
     };
   }
 

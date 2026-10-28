@@ -31,7 +31,8 @@ export default function PrivacyPage() {
       <p className="mt-4">
         Photos and memes you post are public, together with their captions, the
         location you typed, and your first name and last initial. To write the captions,
-        the photo and location are sent to Google&apos;s Gemini API. Google may
+        the photo and location are sent to Anthropic&apos;s Claude API, or to
+        Google&apos;s Gemini API when Claude can&apos;t answer. Google may
         use content sent to its free tier to improve its products, so please
         don&apos;t post photos of people who haven&apos;t agreed to it. Your
         individual votes are private; only the totals are shown.

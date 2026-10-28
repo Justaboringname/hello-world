@@ -153,7 +153,7 @@ export function CreateForm({ remaining }: { remaining: number }) {
           disabled={pending || outOfGenerations}
           className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {pending ? "Gemini is writing captions…" : "Generate captions ✨"}
+          {pending ? "The AI is writing captions…" : "Generate captions ✨"}
         </button>
         <p className="text-sm text-zinc-500">
           {outOfGenerations
