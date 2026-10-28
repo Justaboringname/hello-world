@@ -10,7 +10,8 @@ import { firstParam } from "@/lib/redirect";
 
 export const metadata = { title: "Create · Hello World" };
 
-// The Gemini call runs inside this page's Server Action; give it room.
+// The caption calls (Claude, then Gemini if needed) run inside this page's
+// Server Action; give them room.
 export const maxDuration = 60;
 
 const MODES = {
@@ -52,7 +53,7 @@ export default async function CreatePage({ searchParams }: PageProps<"/create">)
       {mode === "captions" ? (
         <>
           <p className="mt-6 text-zinc-500">
-            Upload something you saw around the city. Gemini writes three captions
+            Upload something you saw around the city. The AI writes three captions
             in the vibe you pick, then everyone votes on the funniest one. Your
             photo and captions are public, posted as{" "}
             <strong className="font-medium text-zinc-700 dark:text-zinc-300">{postedAs}</strong>

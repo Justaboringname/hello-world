@@ -18,8 +18,9 @@ import { CaptionError, generateCaptions } from "@/lib/gemini";
 import type { FormState } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 
-// Photo in, captions out: ask Gemini first (so a failure leaves nothing
-// behind), then store the photo and save everything in one transaction.
+// Photo in, captions out: get the captions first (Claude, or Gemini when it
+// can't; a failure leaves nothing behind), then store the photo and save
+// everything in one transaction.
 export async function createGeneration(
   _prev: FormState,
   formData: FormData,

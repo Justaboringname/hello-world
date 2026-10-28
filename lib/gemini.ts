@@ -1,7 +1,9 @@
 import "server-only";
 import { ApiError, GoogleGenAI, ThinkingLevel, type ContentListUnion } from "@google/genai";
 import { VIBES, type Vibe } from "@/lib/captions";
+import { ClaudeCallError, claudeJson } from "@/lib/claude";
 
+// Captions come from Claude first (lib/claude.ts); Gemini is the fallback.
 // Flash-Lite models get about 500 free requests a day per project, Flash
 // models about 20, so a free key starts on Flash-Lite. GEMINI_MODEL picks a
 // different first choice (e.g. gemini-3.8-flash for better jokes, fewer
@@ -16,9 +18,10 @@ const RETRY_STATUSES = [408, 429, 500, 502, 503, 504];
 const ATTEMPTS_PER_MODEL = 2;
 const ATTEMPT_TIMEOUT_MS = 20_000;
 // /create allows 60 s (maxDuration); leave time to upload and save afterwards.
+// For captions, Claude and Gemini share this deadline.
 const DEADLINE_MS = 50_000;
-// A model that stalls stops here, so the last one still gets a full attempt.
-const MODEL_BUDGET_MS = DEADLINE_MS - ATTEMPT_TIMEOUT_MS;
+// A model that stalls is cut off one full attempt before the deadline, so the
+// last one still gets that attempt, however much of the deadline Claude used.
 
 const CAPTION_COUNT = 3;
 const CAPTION_MAX_LENGTH = 200;
@@ -48,6 +51,17 @@ function buildPrompt(vibe: Vibe, location: string | null) {
   return `Voice: write as ${VIBES[vibe].instruction}\n${where}\nCaption this photo.`;
 }
 
+// Claude's structured outputs need additionalProperties: false and don't take
+// minItems/maxItems, so there only the prompt asks for the count. For both
+// models, parseCaptions keeps at most that many.
+const CLAUDE_CAPTIONS_SCHEMA = {
+  type: "object",
+  properties: { captions: { type: "array", items: { type: "string" } } },
+  required: ["captions"],
+  additionalProperties: false,
+};
+
+// Claude writes the captions, and Gemini takes over whenever it can't.
 // Returns the captions plus the exact prompt text and model used, so they can
 // be saved alongside the photo.
 export async function generateCaptions({
@@ -62,6 +76,30 @@ export async function generateCaptions({
   location: string | null;
 }): Promise<CaptionResult> {
   const prompt = buildPrompt(vibe, location);
+  // Claude stops after its share (lib/claude.ts); Gemini gets what's left.
+  const deadlineAt = Date.now() + DEADLINE_MS;
+
+  try {
+    const answer = await claudeJson({
+      image,
+      mimeType,
+      system: SYSTEM_PROMPT,
+      prompt,
+      schema: CLAUDE_CAPTIONS_SCHEMA,
+      signal: AbortSignal.timeout(DEADLINE_MS),
+    });
+    const captions = parseCaptions(answer.text);
+    if (captions.length > 0) {
+      return { captions, systemPrompt: SYSTEM_PROMPT, prompt, model: answer.model };
+    }
+    console.error(`${answer.model} returned no usable captions; falling back to Gemini`);
+  } catch (error) {
+    // Without a key, Gemini simply does the work; anything else is worth a look.
+    if (!(error instanceof ClaudeCallError && error.reason === "missing-key")) {
+      console.error("Claude caption request failed; falling back to Gemini", error);
+    }
+  }
+
   let result: GeminiJsonResult;
   try {
     result = await generateJson({
@@ -79,22 +117,23 @@ export async function generateCaptions({
         },
         required: ["captions"],
       },
+      deadlineAt,
     });
   } catch (error) {
     if (!(error instanceof GeminiCallError)) throw error;
     throw new CaptionError(
       error.reason === "missing-key"
-        ? "Caption generation isn't set up yet (missing GEMINI_API_KEY)."
+        ? "Caption generation isn't fully set up (missing GEMINI_API_KEY, the fallback when Claude can't answer)."
         : error.reason === "busy"
-          ? "Gemini is overloaded right now. Wait a minute and try again."
-          : "Gemini couldn't caption that photo. Please try again.",
+          ? "The caption models are busy right now. Wait a minute and try again."
+          : "Couldn't caption that photo. Please try again.",
     );
   }
 
   const captions = parseCaptions(result.text);
   if (captions.length === 0) {
     throw new CaptionError(
-      "Gemini didn't return any captions for that photo. Try a different one.",
+      "The AI didn't return any captions for that photo. Try a different one.",
     );
   }
   return { captions, systemPrompt: SYSTEM_PROMPT, prompt, model: result.model };
@@ -112,17 +151,20 @@ export type GeminiJsonResult = { text: string | undefined; model: string };
 
 // One JSON-mode request with the retry, fallback-model and deadline policy
 // described at the top of this file. Returns the first answer any model gives
-// (the caller parses it) and which model gave it.
+// (the caller parses it) and which model gave it. A caller that already spent
+// part of the deadline (on Claude) passes in when it ends.
 export async function generateJson({
   contents,
   systemInstruction,
   responseJsonSchema,
   thinkingLevel = ThinkingLevel.LOW,
+  deadlineAt = Date.now() + DEADLINE_MS,
 }: {
   contents: ContentListUnion;
   systemInstruction: string;
   responseJsonSchema: unknown;
   thinkingLevel?: ThinkingLevel;
+  deadlineAt?: number;
 }): Promise<GeminiJsonResult> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new GeminiCallError("missing-key");
@@ -132,15 +174,14 @@ export async function generateJson({
     ...new Set([process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL, DEFAULT_MODEL, FALLBACK_MODEL]),
   ].slice(0, 2);
   const ai = new GoogleGenAI({ apiKey });
-  const deadline = AbortSignal.timeout(DEADLINE_MS);
+  const deadline = AbortSignal.timeout(Math.max(0, deadlineAt - Date.now()));
 
   let lastError: unknown;
   for (const [index, model] of models.entries()) {
     if (deadline.aborted) break;
     const isLast = index === models.length - 1;
-    const signal = isLast
-      ? deadline
-      : AbortSignal.any([deadline, AbortSignal.timeout(MODEL_BUDGET_MS)]);
+    const budget = Math.max(0, deadlineAt - Date.now() - ATTEMPT_TIMEOUT_MS);
+    const signal = isLast ? deadline : AbortSignal.any([deadline, AbortSignal.timeout(budget)]);
     try {
       const response = await ai.models.generateContent({
         model,
