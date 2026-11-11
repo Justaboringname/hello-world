@@ -3,7 +3,9 @@ import { updateProfile } from "@/app/profile/actions";
 import { Avatar } from "@/components/avatar";
 import { AvatarUploader } from "@/components/avatar-uploader";
 import { NameForm } from "@/components/name-form";
+import { UnfinishedDuels } from "@/components/unfinished-duels";
 import { requireViewer } from "@/lib/auth";
+import { getMyUnfinishedDuels } from "@/lib/duels";
 import { getMyPosts, memeImageUrl, photoUrl, type FeedItem } from "@/lib/feed";
 import { timeAgo } from "@/lib/time";
 
@@ -45,7 +47,10 @@ export default async function ProfilePage() {
     viewer.email ||
     "";
 
-  const myPosts = await getMyPosts(viewer.userId);
+  const [myPosts, unfinished] = await Promise.all([
+    getMyPosts(viewer.userId),
+    getMyUnfinishedDuels(viewer.userId),
+  ]);
   const posts = myPosts.items.map(postSummary);
   const upvotes = posts.reduce((sum, post) => sum + post.upvotes, 0);
 
@@ -68,6 +73,12 @@ export default async function ProfilePage() {
           </dl>
         </div>
       </section>
+
+      {unfinished.length > 0 && (
+        <div className="mt-6">
+          <UnfinishedDuels duels={unfinished} title="Your unfinished duels" />
+        </div>
+      )}
 
       <section className="mt-10">
         <div className="flex items-baseline justify-between gap-4">
