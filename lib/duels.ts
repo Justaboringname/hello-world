@@ -1,6 +1,6 @@
 import "server-only";
 import type { Caption, VoteValue } from "@/lib/captions";
-import { pickDailyId, type DuelResult, type DuelWinner, type JudgedCaption, type Verdict } from "@/lib/duel";
+import { TRIES_PER_PHOTO, pickDailyId, type DuelResult, type DuelWinner, type JudgedCaption, type Verdict } from "@/lib/duel";
 import { createClient } from "@/lib/supabase/server";
 import { newYorkDayNumber } from "@/lib/time";
 
@@ -80,4 +80,62 @@ export async function getMyDuels(userId: string | undefined, generationId: numbe
     .eq("generation_id", generationId)
     .order("try_no", { ascending: true });
   return ((data ?? []) as DuelRow[]).map(toDuelResult);
+}
+
+export type UnfinishedDuel = {
+  generationId: number;
+  triesLeft: number;
+  lastTriedAt: string;
+  imagePath: string | null;
+  location: string | null;
+};
+
+// Photos this user started dueling and hasn't finished: at least one try, no
+// win yet, and tries left. Newest first, so the duel they just left is on top.
+// RLS keeps this to their own tries.
+export async function getMyUnfinishedDuels(userId: string | undefined, exceptId?: number) {
+  if (!userId) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("duels")
+    .select("generation_id, winner, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const byPhoto = new Map<number, { tries: number; won: boolean; lastTriedAt: string }>();
+  for (const row of data ?? []) {
+    const id = row.generation_id as number;
+    const entry = byPhoto.get(id) ?? { tries: 0, won: false, lastTriedAt: row.created_at as string };
+    entry.tries += 1;
+    if (row.winner === "human") entry.won = true;
+    byPhoto.set(id, entry);
+  }
+
+  const open = [...byPhoto.entries()].filter(
+    ([id, entry]) => id !== exceptId && !entry.won && entry.tries < TRIES_PER_PHOTO,
+  );
+  if (open.length === 0) return [];
+
+  const { data: photos } = await supabase
+    .from("generations")
+    .select("id, image_path, location")
+    .in(
+      "id",
+      open.map(([id]) => id),
+    );
+  const photoById = new Map((photos ?? []).map((photo) => [photo.id as number, photo]));
+
+  return open
+    .filter(([id]) => photoById.has(id)) // a deleted photo can't be dueled any more
+    .map(([id, entry]): UnfinishedDuel => {
+      const photo = photoById.get(id)!;
+      return {
+        generationId: id,
+        triesLeft: TRIES_PER_PHOTO - entry.tries,
+        lastTriedAt: entry.lastTriedAt,
+        imagePath: (photo.image_path as string | null) ?? null,
+        location: (photo.location as string | null) ?? null,
+      };
+    });
 }

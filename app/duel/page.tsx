@@ -4,10 +4,11 @@ import { notFound } from "next/navigation";
 import { DuelForm } from "@/components/duel-form";
 import { DuelResultCard } from "@/components/duel-result";
 import { ImageBackdrop } from "@/components/image-backdrop";
+import { UnfinishedDuels } from "@/components/unfinished-duels";
 import { getViewer } from "@/lib/auth";
 import { vibeLabel } from "@/lib/captions";
 import { TRIES_PER_PHOTO, isDuelOver } from "@/lib/duel";
-import { getDailyDuelId, getMyDuels } from "@/lib/duels";
+import { getDailyDuelId, getMyDuels, getMyUnfinishedDuels } from "@/lib/duels";
 import { getGeneration, photoUrl } from "@/lib/feed";
 import { firstParam } from "@/lib/redirect";
 
@@ -45,7 +46,10 @@ export default async function DuelPage({ searchParams }: PageProps<"/duel">) {
 
   const [viewer, generation] = await Promise.all([getViewer(), getGeneration(id)]);
   if (!generation || generation.captions.length === 0) notFound();
-  const tries = await getMyDuels(viewer?.userId, id);
+  const [tries, unfinished] = await Promise.all([
+    getMyDuels(viewer?.userId, id),
+    getMyUnfinishedDuels(viewer?.userId, id),
+  ]);
   const over = isDuelOver(tries);
   const latest = tries.at(-1);
   const earlier = tries.slice(0, -1).reverse();
@@ -64,6 +68,12 @@ export default async function DuelPage({ searchParams }: PageProps<"/duel">) {
         reads both lines as A and B without knowing which one is yours, scores
         them, and coaches you. You get {TRIES_PER_PHOTO} tries.
       </p>
+
+      {unfinished.length > 0 && (
+        <div className="mt-6">
+          <UnfinishedDuels duels={unfinished} />
+        </div>
+      )}
 
       <figure className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm dark:border-zinc-800">
         <div className="relative overflow-hidden bg-zinc-900">
