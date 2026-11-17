@@ -2,6 +2,8 @@
 
 import { useFormStatus } from "react-dom";
 
+// A submit button that shows its form is busy. The look comes from className
+// (see lib/ui.ts).
 export function SubmitButton({
   children,
   pendingLabel,
@@ -14,11 +16,7 @@ export function SubmitButton({
   const { pending } = useFormStatus();
 
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className={`rounded-full text-sm font-medium transition disabled:cursor-wait disabled:opacity-60 ${className}`}
-    >
+    <button type="submit" disabled={pending} className={`disabled:cursor-wait ${className}`}>
       {pending ? pendingLabel : children}
     </button>
   );

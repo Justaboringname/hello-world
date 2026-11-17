@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Bullet } from "@/components/bullet";
 import { LinkPending } from "@/components/link-pending";
+import type { LineColor } from "@/lib/lines";
 
-// shortLabel is shown on phones, where the full one would wrap the header.
-const links: { href: string; label: string; shortLabel?: string }[] = [
-  { href: "/rate", label: "Rate" },
-  { href: "/duel", label: "Beat the bot", shortLabel: "🤖" },
-  { href: "/create", label: "Create" },
+// Each section rides its own line: the R really is yellow, the B orange and
+// the C blue. On phones the bullet alone is the link.
+const links: { href: string; label: string; glyph: string; color: LineColor }[] = [
+  { href: "/rate", label: "Rate", glyph: "R", color: "yellow" },
+  { href: "/duel", label: "Beat the bot", glyph: "B", color: "orange" },
+  { href: "/create", label: "Create", glyph: "C", color: "blue" },
 ];
 
 // The header's main links, with the current section highlighted.
@@ -26,21 +29,15 @@ export function NavLinks() {
             key={link.href}
             href={link.href}
             aria-current={active ? "page" : undefined}
-            aria-label={link.shortLabel ? link.label : undefined}
-            className={`whitespace-nowrap rounded-full px-2 py-1.5 font-medium transition sm:px-3 ${
-              active
-                ? "bg-zinc-900/[0.06] text-zinc-900 dark:bg-white/10 dark:text-white"
-                : "text-zinc-600 hover:bg-zinc-900/[0.04] hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+            aria-label={link.label}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-full p-1 font-semibold transition-colors sm:pr-3.5 ${
+              active ? "bg-white/15 text-white" : "text-sign-muted hover:text-white"
             }`}
           >
-            {link.shortLabel ? (
-              <>
-                <span className="sm:hidden">{link.shortLabel}</span>
-                <span className="hidden sm:inline">{link.label}</span>
-              </>
-            ) : (
-              link.label
-            )}
+            <Bullet color={link.color} className="text-[1.15rem]">
+              {link.glyph}
+            </Bullet>
+            <span className="hidden sm:inline">{link.label}</span>
             <LinkPending />
           </Link>
         );

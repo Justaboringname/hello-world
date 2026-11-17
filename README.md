@@ -13,21 +13,23 @@ app. Week 6 adds an
 [admin panel](https://github.com/Justaboringname/hello-world-admin/blob/main/README.md):
 a second Next.js app in its own repository and Vercel project, for
 superadmins only.
+Week 11 is a new look for the whole app, borrowed from the New York subway
+(see [Week 11: a new look](#week-11-a-new-look)).
 
 ## Routes
 
 | Route            | Access    | What it does                                                       |
 | ---------------- | --------- | ------------------------------------------------------------------ |
-| `/`              | public    | Caption of the Day, this week's top captions, top memes, and "N new posts are waiting for your vote" when signed in. Signed-out visitors also get a three-step "how it works" |
-| `/rate`          | public    | Tabs: All, ✨ New for you (`?tab=new`, signed in), 😂 Memes (`?tab=memes`) and 📸 AI captions (`?tab=photos`), newest first. Voting needs sign-in. Signed-out visitors see the public memes and a "Sign in to see N more memes" card at the top; signed-in users also see the members-only memes |
+| `/`              | public    | Caption of the Day, this week's top captions, top memes, and "N new posts are waiting for your vote" when signed in. Signed-out visitors also get a three-step "how it works". The hero plays real photos from the feed with their captions being typed out |
+| `/rate`          | public    | Tabs: All, New for you (`?tab=new`, signed in), Memes (`?tab=memes`) and AI captions (`?tab=photos`), newest first. Voting needs sign-in. Signed-out visitors see the public memes and a "Sign in to see N more memes" card at the top; signed-in users also see the members-only memes |
 | `/p/[id]`        | public    | One photo: shareable link, votes, and the exact prompt and model used |
 | `/duel`          | public    | Beat the bot: today's photo (or `?photo=<id>`). Signed-in users write one caption (up to 3 tries) and a blind Gemini judge compares it with the bot's. The bot's captions stay hidden until the duel is over |
 | `/m/[id]`        | public    | One meme: shareable link and votes. A members-only meme asks signed-out visitors to sign in |
-| `/create`        | signed in | ✨ AI captions: upload a photo, pick a vibe, get three AI captions (Claude, or Gemini as the fallback; 10 a day). 😂 Make a meme (`?mode=meme`): upload an image, add top/bottom text with a live preview, post it (20 a day). Either way you land on the new post's page with a "🎉 Posted!" banner and a Share button |
+| `/create`        | signed in | AI captions: upload a photo, pick a vibe, get three AI captions (Claude, or Gemini as the fallback; 10 a day). Make a meme (`?mode=meme`): upload an image, add top/bottom text with a live preview, post it (20 a day). Either way you land on the new post's page with a "Your captions are ready" banner and a Share button |
 | `/login`         | public    | "Continue with Google"                                             |
 | `/auth/callback` | public    | OAuth redirect URI; exchanges the code for a session cookie        |
 | `/onboarding`    | signed in | Asks for first/last name if either is still empty after sign-in    |
-| `/profile`       | signed in | Your posts and the 👍 each one got, plus your name and profile photo |
+| `/profile`       | signed in | Your posts and the upvotes each one got, plus your name and profile photo |
 | `/memes`, `/vault` | public  | Redirect to `/rate?tab=memes` (see [`next.config.ts`](next.config.ts)) |
 
 Signed-out visitors to a protected route are redirected to `/login` by
@@ -309,6 +311,47 @@ The admin panel lives in
 deploys as its own Vercel project. Its README covers the setup, how every
 route is kept behind Google sign-in plus `profiles.is_superadmin`, and how the
 first admin gets in without being locked out.
+
+## Week 11: a new look
+
+The whole interface was redrawn around one idea: this is a New York app, so it
+looks like the subway. No routes, data or rules changed.
+
+- **Sign bands and route bullets.** The header is a black sign band with the
+  thin white line real signs carry. Each section rides its own line, and the
+  letters are the real ones: the **R** (Rate) is yellow, the **B** (Beat the
+  bot) orange, the **C** (Create) blue. On phones the bullets alone are the
+  navigation. The four vibes got bullets too: the M is orange, the L grey, the
+  1 red (Columbia's train) and the N yellow. Ranks 1 to 3 are red and 4 to 5
+  green, like the trains with those numbers.
+- **Two voices in type.** Archivo carries the interface; squeezed to its
+  narrowest width and set in caps (`.display`) it is the poster voice for
+  titles. Captions, the jokes themselves, are set in an italic Caslon
+  (`.joke`), the way a cartoon caption contest sets them.
+- **One ballot per photo** ([`components/vote.tsx`](components/vote.tsx)). A
+  photo's three captions are voted on together: the crown moves to whichever
+  is ahead as you vote, the bar under each caption is its share of the photo's
+  upvotes, and a vote that lands throws a "HA!" (or a "meh") out of its
+  button. Votes still update first and then settle on the server's totals.
+- **The home page shows the product.** The hero plays real photos from the
+  feed, typing their three captions out one after another with the votes each
+  got. Under it, a yellow ribbon scrolls the best captions. When nobody has
+  voted this week, the board shows the all-time favorites instead of an empty
+  list.
+- **Waiting looks like work.** While the AI writes, the photo is scanned and
+  the three captions take shape under it; on the new post's page they print in
+  one at a time. While the judge reads a duel, the two lines trade places as A
+  and B.
+- **Beat the bot reads like a fight card.** The verdict is a banner, both
+  lines sit side by side, and the five scores face each other across the
+  middle.
+- **Pages connect.** A photo you open from the feed morphs into its place on
+  its own page (React `<ViewTransition>`); other pages fade and lift in.
+- **Light and dark.** White station tile by day, warm black at night; the sign
+  band and the line colors are the same in both. Everything is a token in
+  [`app/globals.css`](app/globals.css), and shared button, field and card
+  classes live in [`lib/ui.ts`](lib/ui.ts).
+- Motion is off for visitors who ask for reduced motion.
 
 ## Development
 

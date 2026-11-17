@@ -1,18 +1,18 @@
 import { ImageBackdrop } from "@/components/image-backdrop";
 
 const textClass =
-  "pointer-events-none absolute inset-x-2 break-words text-center font-black uppercase leading-tight text-white [text-shadow:_2px_2px_0_#000,_-2px_-2px_0_#000,_2px_-2px_0_#000,_-2px_2px_0_#000]";
+  "pointer-events-none absolute inset-x-2 break-words text-center font-black uppercase leading-tight text-white [font-stretch:75%] [text-shadow:_2px_2px_0_#000,_-2px_-2px_0_#000,_2px_-2px_0_#000,_-2px_2px_0_#000]";
 
 const variants = {
   // The feed and the live preview: as tall as the image needs, up to a limit.
   full: {
-    box: "relative min-h-48 overflow-hidden bg-zinc-900",
-    img: "relative mx-auto max-h-[32rem] w-full object-contain",
-    text: "text-2xl",
+    box: "relative min-h-48 overflow-hidden bg-black",
+    img: "relative mx-auto max-h-[34rem] w-full object-contain",
+    text: "text-[1.7rem]",
   },
   // Grids of several memes: every tile the same shape.
   thumb: {
-    box: "relative aspect-[4/3] overflow-hidden bg-zinc-900",
+    box: "relative aspect-[4/3] overflow-hidden bg-black",
     img: "relative h-full w-full object-contain",
     text: "text-lg",
   },

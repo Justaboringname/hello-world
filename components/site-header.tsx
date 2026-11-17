@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
 import { Avatar } from "@/components/avatar";
+import { Lock } from "@/components/icons";
 import { Logo } from "@/components/logo";
 import { NavLinks } from "@/components/nav-links";
 import { SubmitButton } from "@/components/submit-button";
 import { getViewer } from "@/lib/auth";
+import { btnPrimarySmall } from "@/lib/ui";
 
+// The header is a subway sign: a black band with a white line near its top
+// edge, and one route bullet per section.
 export async function SiteHeader() {
   const viewer = await getViewer();
   const name =
@@ -16,11 +20,11 @@ export async function SiteHeader() {
     "";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/85 backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/80">
-      <nav className="mx-auto flex w-full max-w-4xl items-center gap-0.5 px-4 py-2.5 text-sm sm:gap-2">
-        <Link href="/" className="mr-1 flex items-center gap-2 whitespace-nowrap font-semibold sm:mr-3">
+    <header className="sign sign-line sticky top-0 z-30" style={{ viewTransitionName: "site-header" }}>
+      <nav className="mx-auto flex w-full max-w-6xl items-center gap-1 px-4 pb-2.5 pt-4 text-[0.95rem] sm:gap-1.5">
+        <Link href="/" className="mr-1 flex items-center gap-2.5 whitespace-nowrap rounded-full sm:mr-4">
           <Logo />
-          <span className="hidden min-[440px]:inline">Hello World</span>
+          <span className="hidden text-[1.05rem] font-bold tracking-tight min-[480px]:inline">Hello World</span>
         </Link>
         <NavLinks />
 
@@ -29,28 +33,26 @@ export async function SiteHeader() {
             <>
               <Link
                 href="/profile"
-                className="flex items-center gap-2 rounded-full py-1 pl-1 pr-1 transition hover:bg-zinc-900/[0.04] sm:pr-3 dark:hover:bg-white/5"
+                className="flex items-center gap-2 rounded-full p-1 font-semibold text-sign-muted transition-colors hover:text-white sm:pr-3"
               >
-                <Avatar src={viewer.profile?.avatar_url} name={name} />
-                <span className="hidden font-medium sm:inline">Profile</span>
+                <Avatar src={viewer.profile?.avatar_url} name={name} className="ring-2 ring-white/25" />
+                <span className="hidden sm:inline">Profile</span>
               </Link>
               <form action={signOut}>
                 <SubmitButton
                   pendingLabel="Signing out…"
-                  className="whitespace-nowrap px-3 py-1.5 text-zinc-600 hover:bg-zinc-900/[0.04] hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+                  className="whitespace-nowrap rounded-full px-2.5 py-1.5 font-semibold text-sign-muted transition-colors hover:text-white"
                 >
                   Sign out
                 </SubmitButton>
               </form>
             </>
           ) : (
-            // Where "Vault 🔒" used to be: members get extra memes.
-            <Link
-              href="/login?next=%2Frate%3Ftab%3Dmemes"
-              className="whitespace-nowrap rounded-full bg-blue-600 px-3.5 py-1.5 font-medium text-white shadow-sm hover:bg-blue-700"
-            >
+            // Where "Vault" used to be: members get extra memes.
+            <Link href="/login?next=%2Frate%3Ftab%3Dmemes" className={btnPrimarySmall}>
+              <Lock />
               <span className="sm:hidden">Sign in</span>
-              <span className="hidden sm:inline">🔒 Sign in to see more memes</span>
+              <span className="hidden sm:inline">Sign in to see more memes</span>
             </Link>
           )}
         </div>

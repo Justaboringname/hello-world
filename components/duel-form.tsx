@@ -1,9 +1,36 @@
 "use client";
 
-import { startTransition, useActionState, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useEffect, useState, type FormEvent } from "react";
 import { submitDuel } from "@/app/duel/actions";
-import { DUEL_MAX_LENGTH } from "@/lib/duel";
+import { Bullet } from "@/components/bullet";
+import { DUEL_MAX_LENGTH, TRIES_PER_PHOTO } from "@/lib/duel";
 import type { FormState } from "@/lib/profile";
+import { btnPrimary, errorText } from "@/lib/ui";
+
+// What the judge is doing while the player waits, a few seconds each.
+const JUDGING_STEPS = [
+  "Shuffling your line and the bot's into A and B",
+  "The judge is reading both without knowing whose is whose",
+  "Scoring each line on five things",
+  "Writing notes on your line",
+];
+
+// The judge at work: the two lines trading places as A and B.
+export function JudgingPanel({ step }: { step: number }) {
+  return (
+    <div className="flex items-center gap-4 rounded-xl bg-raised px-4 py-3.5" role="status">
+      <span className="flex shrink-0 gap-1.5 text-[1.5rem]" aria-hidden>
+        <Bullet color="blue" className="shuffle-a relative">
+          A
+        </Bullet>
+        <Bullet color="orange" className="shuffle-b relative">
+          B
+        </Bullet>
+      </span>
+      <p className="caret font-semibold">{JUDGING_STEPS[step]}</p>
+    </div>
+  );
+}
 
 // The one-line caption box. Submitted by hand (not <form action>) so a
 // rejected line stays in the box; a judged one clears it.
@@ -28,17 +55,43 @@ export function DuelForm({ generationId, triesLeft }: { generationId: number; tr
     if (state.status === "success") setText("");
   }
 
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    if (!pending) return;
+    const timer = setInterval(
+      () => setStep((current) => Math.min(current + 1, JUDGING_STEPS.length - 1)),
+      3200,
+    );
+    return () => {
+      clearInterval(timer);
+      setStep(0);
+    };
+  }, [pending]);
+
   const left = DUEL_MAX_LENGTH - text.length;
+  const used = TRIES_PER_PHOTO - triesLeft;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <input type="hidden" name="generation_id" value={generationId} />
-      <label className="text-sm font-medium" htmlFor="duel-caption">
-        Your caption{" "}
-        <span className="font-normal text-zinc-500">
-          ({triesLeft} {triesLeft === 1 ? "try" : "tries"} left)
-        </span>
-      </label>
+      <div className="flex items-center justify-between gap-3">
+        <label className="font-bold" htmlFor="duel-caption">
+          Your caption
+        </label>
+        <p className="flex items-center gap-2 text-sm text-muted">
+          <span className="flex gap-1" aria-hidden>
+            {Array.from({ length: TRIES_PER_PHOTO }, (_, index) => (
+              <span
+                key={index}
+                className={`h-3 w-3 rounded-full border-[1.5px] ${
+                  index < used ? "border-muted bg-muted" : "border-orange bg-orange"
+                }`}
+              />
+            ))}
+          </span>
+          {triesLeft} {triesLeft === 1 ? "try" : "tries"} left
+        </p>
+      </div>
       <textarea
         id="duel-caption"
         name="caption"
@@ -55,24 +108,26 @@ export function DuelForm({ generationId, triesLeft }: { generationId: number; tr
         }}
         maxLength={DUEL_MAX_LENGTH}
         rows={2}
-        disabled={pending}
+        // Stays readable (and submitted) while the judge works.
+        readOnly={pending}
         placeholder="One line. Make it about this photo."
-        className="w-full resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
+        className="joke w-full resize-none rounded-xl border-[1.5px] border-rule bg-canvas px-4 py-3 text-[1.3rem] text-ink outline-none placeholder:text-muted/70 focus:border-ink read-only:opacity-70"
       />
-      <div className="flex items-center justify-between gap-3">
-        <span className={`text-xs tabular-nums ${left < 10 ? "text-amber-600" : "text-zinc-500"}`}>
-          {left} characters left
-        </span>
-        <button
-          type="submit"
-          disabled={pending || !text.trim()}
-          className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {pending ? "The judge is reading…" : "🤖 Duel the bot"}
-        </button>
-      </div>
+
+      {pending ? (
+        <JudgingPanel step={step} />
+      ) : (
+        <div className="flex items-center justify-between gap-3">
+          <span className={`text-sm tabular-nums ${left < 10 ? "font-bold text-down" : "text-muted"}`}>
+            {left} characters left
+          </span>
+          <button type="submit" disabled={!text.trim()} className={btnPrimary}>
+            Duel the bot
+          </button>
+        </div>
+      )}
       {state.status === "error" && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className={errorText}>
           {state.message}
         </p>
       )}

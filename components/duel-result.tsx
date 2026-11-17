@@ -1,76 +1,153 @@
+import type { CSSProperties } from "react";
+import { Confetti } from "@/components/confetti";
+import { Crown } from "@/components/icons";
 import { RUBRIC, type DuelResult, type JudgedCaption, type RubricKey } from "@/lib/duel";
 
 const BANNERS = {
-  human: { emoji: "🎉", title: "You beat the bot!", tone: "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/40" },
-  bot: { emoji: "🤖", title: "The bot wins this round", tone: "border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/60" },
-  tie: { emoji: "🤝", title: "Dead even", tone: "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40" },
+  human: { title: "You beat the bot", tone: "bg-yellow text-black" },
+  bot: { title: "The bot wins this round", tone: "bg-purple text-white" },
+  tie: { title: "Dead even", tone: "bg-ink text-canvas" },
 } as const;
 
-function Side({ who, side, won }: { who: string; side: { text: string } & JudgedCaption; won: boolean }) {
+// One side's line as the judge read it, with what the judge said about it.
+function Line({
+  who,
+  label,
+  dot,
+  side,
+  won,
+}: {
+  who: string;
+  label: "A" | "B";
+  dot: string;
+  side: { text: string } & JudgedCaption;
+  won: boolean;
+}) {
   return (
-    <div
-      className={`flex flex-col gap-3 rounded-xl border p-4 ${
-        won ? "border-green-300 dark:border-green-800" : "border-zinc-200 dark:border-zinc-800"
-      }`}
-    >
-      <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">
-        {who} {won && "· 👑"}
+    <div className={`flex flex-col gap-2.5 rounded-xl border-[1.5px] p-4 ${won ? "border-ink" : "border-rule"}`}>
+      <p className="flex items-center gap-2 text-sm font-bold">
+        <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+        {who}
+        <span className="font-normal text-muted">read as {label}</span>
+        {won && (
+          <span
+            className="bullet ml-auto text-[0.95rem]"
+            style={{ "--b": "var(--yellow)", "--bt": "#000" } as CSSProperties}
+            title="Winner"
+          >
+            <Crown className="h-[0.95em] w-[0.95em]" />
+          </span>
+        )}
       </p>
-      <p className="text-lg font-medium leading-snug">“{side.text}”</p>
-      <dl className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 text-sm">
-        {(Object.keys(RUBRIC) as RubricKey[]).map((key) => (
-          <div key={key} className="contents">
-            <dt className="text-zinc-500">{RUBRIC[key]}</dt>
-            <dd className="flex gap-0.5" aria-label={`${side.scores[key]} out of 5`}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <span
-                  key={n}
-                  className={`h-2 w-4 rounded-full ${
-                    n <= side.scores[key] ? "bg-blue-500" : "bg-zinc-200 dark:bg-zinc-700"
-                  }`}
-                />
-              ))}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {side.critique && <p className="text-sm text-zinc-600 dark:text-zinc-400">{side.critique}</p>}
+      <p className="joke text-[1.25rem]">&ldquo;{side.text}&rdquo;</p>
+      {side.critique && <p className="text-sm text-muted">{side.critique}</p>}
     </div>
   );
 }
 
-// One judged try: who won and why, both lines with their scores, and the
-// coaching on the user's own line.
+// A score out of 5 as a bar that grows away from the middle column.
+function Bar({ value, fill, from, delay }: { value: number; fill: string; from: "left" | "right"; delay: number }) {
+  return (
+    <span className={`flex h-2.5 flex-1 overflow-hidden rounded-full bg-rule/60 ${from === "right" ? "justify-end" : ""}`}>
+      <span
+        className={`grow-x h-full rounded-full ${fill}`}
+        style={{ width: `${(value / 5) * 100}%`, "--origin": from, "--d": `${delay}ms` } as CSSProperties}
+      />
+    </span>
+  );
+}
+
+// The tale of the tape: both lines' scores on each thing the judge looks at,
+// facing each other across the middle.
+function Tape({ result, animate }: { result: DuelResult; animate: boolean }) {
+  return (
+    <div className="mt-5">
+      <p className="flex justify-between text-sm font-bold">
+        <span className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-orange" />
+          You
+        </span>
+        <span className="flex items-center gap-2">
+          The bot
+          <span className="h-2.5 w-2.5 rounded-full bg-purple" />
+        </span>
+      </p>
+      <ul className="mt-2 grid gap-2">
+        {(Object.keys(RUBRIC) as RubricKey[]).map((key, index) => {
+          const human = result.human.scores[key];
+          const bot = result.bot.scores[key];
+          const delay = animate ? 250 + index * 90 : 0;
+          return (
+            <li
+              key={key}
+              aria-label={`${RUBRIC[key]}: you ${human} out of 5, the bot ${bot} out of 5`}
+              className="grid grid-cols-[minmax(0,1fr)_7.5rem_minmax(0,1fr)] items-center gap-2.5 sm:grid-cols-[minmax(0,1fr)_10.5rem_minmax(0,1fr)]"
+            >
+              <span className="flex items-center gap-2" aria-hidden>
+                <Bar value={human} fill="bg-orange" from="right" delay={delay} />
+                <span className={`w-3 text-right font-bold tabular-nums ${human > bot ? "text-you" : "text-muted"}`}>
+                  {human}
+                </span>
+              </span>
+              <span className="text-center text-xs leading-tight text-muted sm:text-sm" aria-hidden>
+                {RUBRIC[key]}
+              </span>
+              <span className="flex items-center gap-2" aria-hidden>
+                <span className={`w-3 font-bold tabular-nums ${bot > human ? "text-bot" : "text-muted"}`}>{bot}</span>
+                <Bar value={bot} fill="bg-purple" from="left" delay={delay} />
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+// One judged try: who won and why, both lines, their scores side by side, and
+// the coaching on the user's own line.
 export function DuelResultCard({ result, latest }: { result: DuelResult; latest: boolean }) {
   const banner = BANNERS[result.winner];
+  const botLabel = result.humanLabel === "A" ? "B" : "A";
   return (
-    <section className={`rounded-2xl border p-5 ${banner.tone}`} aria-label={`Try ${result.tryNo}`}>
-      <p className="text-sm text-zinc-500">Try {result.tryNo}</p>
-      <h2 className={`mt-1 font-semibold tracking-tight ${latest ? "text-2xl" : "text-lg"}`}>
-        <span aria-hidden>{banner.emoji}</span> {banner.title}
-      </h2>
-      {result.reason && <p className="mt-2 text-zinc-700 dark:text-zinc-300">{result.reason}</p>}
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <Side who={`You (${result.humanLabel})`} side={result.human} won={result.winner === "human"} />
-        <Side
-          who={`The bot (${result.humanLabel === "A" ? "B" : "A"})`}
-          side={result.bot}
-          won={result.winner === "bot"}
-        />
+    <section className="overflow-hidden rounded-2xl border border-rule bg-surface" aria-label={`Try ${result.tryNo}`}>
+      <div className={`relative overflow-hidden px-5 py-4 ${banner.tone}`}>
+        {latest && result.winner === "human" && <Confetti />}
+        <p className="relative text-sm font-semibold opacity-80">Try {result.tryNo}</p>
+        <h2 className={`display relative mt-0.5 ${latest ? "text-[2.5rem] sm:text-[3rem]" : "text-[1.7rem]"}`}>
+          {banner.title}
+        </h2>
       </div>
 
-      {(result.human.craft_note || result.human.punch_up) && (
-        <div className="mt-4 rounded-xl bg-white/70 p-4 text-sm dark:bg-black/20">
-          <p className="font-medium">🎤 The judge&apos;s note on your line</p>
-          {result.human.craft_note && <p className="mt-1">{result.human.craft_note}</p>}
-          {result.human.punch_up && (
-            <p className="mt-2">
-              <span className="text-zinc-500">Punched up: </span>“{result.human.punch_up}”
-            </p>
-          )}
+      <div className="p-5">
+        {result.reason && <p className="text-[1.05rem] leading-relaxed">{result.reason}</p>}
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <Line
+            who="You"
+            label={result.humanLabel}
+            dot="bg-orange"
+            side={result.human}
+            won={result.winner === "human"}
+          />
+          <Line who="The bot" label={botLabel} dot="bg-purple" side={result.bot} won={result.winner === "bot"} />
         </div>
-      )}
+
+        <Tape result={result} animate={latest} />
+
+        {(result.human.craft_note || result.human.punch_up) && (
+          <div className="mt-5 rounded-xl bg-raised p-4">
+            <p className="font-bold">The judge&apos;s note on your line</p>
+            {result.human.craft_note && <p className="mt-1.5 text-[0.95rem]">{result.human.craft_note}</p>}
+            {result.human.punch_up && (
+              <p className="mt-3">
+                <span className="block text-sm text-muted">Your line, punched up</span>
+                <span className="joke mt-0.5 block text-[1.2rem]">&ldquo;{result.human.punch_up}&rdquo;</span>
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 import { completeOnboarding } from "@/app/profile/actions";
 import { NameForm } from "@/components/name-form";
+import { Page, PageHeader } from "@/components/page";
 import { requireViewer } from "@/lib/auth";
 import { isProfileComplete, splitFullName } from "@/lib/profile";
 import { firstParam, safeNextPath } from "@/lib/redirect";
+import { card } from "@/lib/ui";
 
 // Shown right after sign-in whenever first_name or last_name is still empty.
 export default async function OnboardingPage({
@@ -18,13 +20,12 @@ export default async function OnboardingPage({
   const suggested = splitFullName(viewer.fullName);
 
   return (
-    <main className="mx-auto w-full max-w-lg flex-1 px-4 py-12 font-sans">
-      <h1 className="text-3xl font-semibold tracking-tight">Welcome! 👋</h1>
-      <p className="mt-2 text-zinc-500">
+    <Page width="max-w-lg">
+      <PageHeader title="Welcome">
         Before you continue, tell us what to call you. You can change this any
         time on your Profile page.
-      </p>
-      <div className="mt-8">
+      </PageHeader>
+      <div className={`${card} mt-8 p-6`}>
         <NameForm
           action={completeOnboarding}
           defaultFirstName={viewer.profile?.first_name ?? suggested.first}
@@ -33,6 +34,6 @@ export default async function OnboardingPage({
           next={next}
         />
       </div>
-    </main>
+    </Page>
   );
 }

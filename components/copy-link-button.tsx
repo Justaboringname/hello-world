@@ -1,10 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { Check, LinkIcon } from "@/components/icons";
+import { btnSecondary } from "@/lib/ui";
 
 // Shares a page's clean URL (path, without ?posted=1 and the like). Phones
 // get the native share sheet; everyone else gets the link copied.
-export function CopyLinkButton({ path, title }: { path: string; title?: string }) {
+export function CopyLinkButton({
+  path,
+  title,
+  className = btnSecondary,
+}: {
+  path: string;
+  title?: string;
+  className?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function share() {
@@ -28,12 +38,9 @@ export function CopyLinkButton({ path, title }: { path: string; title?: string }
   }
 
   return (
-    <button
-      type="button"
-      onClick={share}
-      className="rounded-full border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-    >
-      {copied ? "Link copied ✓" : "Share 🔗"}
+    <button type="button" onClick={share} className={className}>
+      {copied ? <Check /> : <LinkIcon />}
+      {copied ? "Link copied" : "Share"}
     </button>
   );
 }

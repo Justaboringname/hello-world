@@ -1,5 +1,7 @@
 // Shared by the browser and the server: no secrets in here.
 
+import type { LineColor } from "@/lib/lines";
+
 export const PHOTO_BUCKET = "photos";
 export const PHOTO_MAX_BYTES = 3 * 1024 * 1024;
 export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -8,11 +10,14 @@ export const LOCATION_MAX_LENGTH = 60;
 // Gemini's free tier is shared by everyone, so each user gets a few a day.
 export const DAILY_GENERATION_LIMIT = 10;
 
-// The voice Gemini writes in. `instruction` goes into the saved prompt.
+// The voice the AI writes in. `instruction` goes into the saved prompt.
+// `bullet` is how the vibe is marked in the UI: each one rides a real line
+// (the M is orange, the L grey, the 1 red and the N yellow).
 export const VIBES = {
   midwest: {
     label: "Midwest culture shock",
     emoji: "🌽",
+    bullet: { glyph: "M", color: "orange" },
     blurb: "Fresh off the plane and still shook",
     instruction:
       "a college junior who just moved to New York from the Midwest and is still amazed and slightly horrified by everything. Compare things to back home (Target parking lots, ranch dressing, saying \"ope\", driving everywhere). Wholesome but shook.",
@@ -20,6 +25,7 @@ export const VIBES = {
   online: {
     label: "Chronically online",
     emoji: "📱",
+    bullet: { glyph: "L", color: "gray" },
     blurb: "Lowercase, unhinged, posted at 2am",
     instruction:
       "a chronically online Gen Z college student. Lowercase, current internet slang and meme formats, like a viral tweet or TikTok comment. Never cringe or try-hard.",
@@ -27,6 +33,7 @@ export const VIBES = {
   columbia: {
     label: "Columbia life",
     emoji: "🦁",
+    bullet: { glyph: "1", color: "red" },
     blurb: "Butler all-nighters and the 1 train",
     instruction:
       "a stressed Columbia College junior. Reference campus life where it fits: the Core, all-nighters in Butler Library, dorm life, dining hall food, Morningside Heights, the 1 train.",
@@ -34,11 +41,15 @@ export const VIBES = {
   newyorker: {
     label: "Jaded New Yorker",
     emoji: "🗽",
+    bullet: { glyph: "N", color: "yellow" },
     blurb: "Seen it all, impressed by none of it",
     instruction:
       "a born-and-raised New Yorker who has seen it all. Deadpan, unimpressed, brutally efficient, a little rude but never mean.",
   },
-} as const;
+} as const satisfies Record<
+  string,
+  { label: string; emoji: string; bullet: { glyph: string; color: LineColor }; blurb: string; instruction: string }
+>;
 
 export type Vibe = keyof typeof VIBES;
 
@@ -98,9 +109,9 @@ export const DAILY_MEME_LIMIT = 20;
 // The feeds on /rate. "new" is the signed-in user's unrated posts.
 export const RATE_TABS = {
   all: "All",
-  new: "✨ New for you",
-  memes: "😂 Memes",
-  photos: "📸 AI captions",
+  new: "New for you",
+  memes: "Memes",
+  photos: "AI captions",
 } as const;
 export type RateTab = keyof typeof RATE_TABS;
 

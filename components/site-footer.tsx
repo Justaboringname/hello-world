@@ -3,6 +3,7 @@ import { Logo } from "@/components/logo";
 
 const links = [
   { href: "/rate", label: "Rate" },
+  { href: "/duel", label: "Beat the bot" },
   { href: "/create", label: "Create" },
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },
@@ -10,18 +11,17 @@ const links = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-8 border-t border-zinc-200 dark:border-zinc-800">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-8 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-        <p className="flex items-center gap-2">
-          <Logo className="h-5 w-5" />
+    <footer className="mt-10 border-t border-rule">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+        <p className="flex items-center gap-2.5">
+          <Logo className="h-6 w-6" />
           <span>
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">Hello World</span>{" "}
-            · memes and AI captions from New York
+            <span className="font-bold text-ink">Hello World</span> is memes and AI captions from New York.
           </span>
         </p>
-        <nav className="flex flex-wrap gap-x-5 gap-y-2">
+        <nav className="flex flex-wrap gap-x-5 gap-y-2 font-medium">
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className="hover:text-zinc-900 hover:underline dark:hover:text-zinc-100">
+            <Link key={link.href} href={link.href} className="hover:text-ink hover:underline">
               {link.label}
             </Link>
           ))}
