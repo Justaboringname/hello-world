@@ -72,7 +72,9 @@ export default async function Home() {
           <div aria-hidden className="tile pointer-events-none absolute inset-0" />
           <div className="relative mx-auto grid w-full max-w-6xl items-start gap-x-14 gap-y-10 px-4 pb-12 pt-10 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:pb-16">
             <div>
-              <h1 className="display text-[clamp(3.1rem,13vw,6.1rem)]">
+              {/* Sized to its column: one column on small screens, a narrower one
+                  beside the reel from lg, a wide one from xl. */}
+              <h1 className="display text-[clamp(3.1rem,13vw,6.1rem)] lg:text-[4.9rem] xl:text-[6.1rem]">
                 <span className="rise">
                   <span>Snap the city.</span>
                 </span>
