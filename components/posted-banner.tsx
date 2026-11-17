@@ -15,7 +15,7 @@ export function PostedBanner({ title, path }: { title: string; path: string }) {
   return (
     <div
       role="status"
-      className="relative flex flex-col gap-4 overflow-hidden rounded-2xl bg-yellow p-5 text-black sm:flex-row sm:items-center sm:justify-between"
+      className="relative flex flex-col gap-4 overflow-hidden rounded-2xl bg-accent p-5 text-on-accent sm:flex-row sm:items-center sm:justify-between"
     >
       <Confetti />
       <div className="relative">
@@ -28,7 +28,7 @@ export function PostedBanner({ title, path }: { title: string; path: string }) {
       <div className="relative shrink-0">
         <CopyLinkButton
           path={path}
-          className="key inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-black px-5 py-2.5 font-semibold text-white shadow-[0_3px_0_rgb(0_0_0/0.35)]"
+          className="key inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-on-accent px-5 py-2.5 font-semibold text-accent shadow-[0_3px_0_rgb(0_0_0/0.35)]"
         />
       </div>
     </div>

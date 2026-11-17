@@ -66,7 +66,7 @@ export function HeroReel({ slides }: { slides: ReelSlide[] }) {
       onMouseLeave={() => setPaused(false)}
       className="group block lg:rotate-[1.2deg]"
     >
-      <article className="overflow-hidden rounded-2xl border-[1.5px] border-ink bg-surface shadow-[0.55rem_0.55rem_0_var(--yellow)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5">
+      <article className="overflow-hidden rounded-2xl border-[1.5px] border-ink bg-surface shadow-[0.55rem_0.55rem_0_var(--accent)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5">
         <div className="relative aspect-[4/3] bg-black">
           {slides.map((slide, index) => (
             // eslint-disable-next-line @next/next/no-img-element

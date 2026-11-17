@@ -4,7 +4,7 @@ import { Crown } from "@/components/icons";
 import { RUBRIC, type DuelResult, type JudgedCaption, type RubricKey } from "@/lib/duel";
 
 const BANNERS = {
-  human: { title: "You beat the bot", tone: "bg-yellow text-black" },
+  human: { title: "You beat the bot", tone: "bg-green text-white" },
   bot: { title: "The bot wins this round", tone: "bg-purple text-white" },
   tie: { title: "Dead even", tone: "bg-ink text-canvas" },
 } as const;
@@ -32,7 +32,7 @@ function Line({
         {won && (
           <span
             className="bullet ml-auto text-[0.95rem]"
-            style={{ "--b": "var(--yellow)", "--bt": "#000" } as CSSProperties}
+            style={{ "--b": "var(--accent)", "--bt": "var(--on-accent)" } as CSSProperties}
             title="Winner"
           >
             <Crown className="h-[0.95em] w-[0.95em]" />
