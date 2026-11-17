@@ -63,7 +63,7 @@ export default async function ProfilePage() {
   return (
     <Page width="max-w-3xl">
       <section className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
-        <Avatar src={profile?.avatar_url} name={name} size="lg" className="ring-4 ring-yellow" />
+        <Avatar src={profile?.avatar_url} name={name} size="lg" className="ring-4 ring-accent" />
         <div className="min-w-0 flex-1">
           <h1 className="display text-[2.8rem] sm:text-[3.4rem]">{name || "Your profile"}</h1>
           <p className="mt-1 truncate text-muted">{viewer.email}</p>

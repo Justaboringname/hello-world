@@ -6,10 +6,10 @@ import { Bullet } from "@/components/bullet";
 import { LinkPending } from "@/components/link-pending";
 import type { LineColor } from "@/lib/lines";
 
-// Each section rides its own line: the R really is yellow, the B orange and
-// the C blue. On phones the bullet alone is the link.
+// Each section rides its own line. The B really is orange and the C blue; the
+// R takes green, the color of an upvote. On phones the bullet alone is the link.
 const links: { href: string; label: string; glyph: string; color: LineColor }[] = [
-  { href: "/rate", label: "Rate", glyph: "R", color: "yellow" },
+  { href: "/rate", label: "Rate", glyph: "R", color: "green" },
   { href: "/duel", label: "Beat the bot", glyph: "B", color: "orange" },
   { href: "/create", label: "Create", glyph: "C", color: "blue" },
 ];

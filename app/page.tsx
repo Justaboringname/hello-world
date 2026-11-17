@@ -214,7 +214,7 @@ export default async function Home() {
                               .join(", ")}
                           </span>
                         </span>
-                        <span className="display shrink-0 text-[1.9rem] tabular-nums text-yellow">
+                        <span className="display shrink-0 text-[1.9rem] tabular-nums text-accent">
                           +{caption.score}
                         </span>
                       </Link>
@@ -293,7 +293,7 @@ function CaptionOfTheDay({ caption }: { caption: RankedCaption }) {
   return (
     <Link
       href={`/p/${generation.id}`}
-      className="group mt-4 grid overflow-hidden rounded-2xl bg-yellow text-black sm:grid-cols-[5fr_6fr]"
+      className="group mt-4 grid overflow-hidden rounded-2xl bg-accent text-on-accent sm:grid-cols-[5fr_6fr]"
     >
       <ViewTransition name={`photo-${generation.id}`} share="morph" default="none">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -306,7 +306,7 @@ function CaptionOfTheDay({ caption }: { caption: RankedCaption }) {
       <div className="flex flex-col justify-center gap-4 p-6 sm:p-9">
         <span
           className="bullet text-[1.5rem]"
-          style={{ "--b": "#000", "--bt": "var(--yellow)" } as CSSProperties}
+          style={{ "--b": "var(--on-accent)", "--bt": "var(--accent)" } as CSSProperties}
         >
           <Crown className="h-[0.95em] w-[0.95em]" />
         </span>

@@ -198,7 +198,7 @@ export function CaptionBallot({
             {caption.id === topId && (
               <span
                 className="bullet pop mr-2 align-[0.12em] text-[0.72em]"
-                style={{ "--b": "var(--yellow)", "--bt": "#000" } as CSSProperties}
+                style={{ "--b": "var(--accent)", "--bt": "var(--on-accent)" } as CSSProperties}
                 title="Top caption on this photo"
               >
                 <Crown className="h-[0.95em] w-[0.95em]" />

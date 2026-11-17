@@ -20,14 +20,18 @@
   --sign-muted: #b9b2ab;
   --sign-rule: #3a3531;
 
+  /* The brand color: a bright sky blue, the same in both themes and on the
+     black sign. It is light, so what sits on it is dark. */
+  --accent: #5aa5ff;
+  --accent-edge: #2f73c9;
+  --on-accent: #0a1326;
+
   /* Subway line colors, used as fills. */
-  --yellow: #fccc0a; /* N Q R W */
-  --yellow-edge: #b38f00;
   --orange: #ff6319; /* B D F M */
   --red: #ee352e; /* 1 2 3 */
   --green: #00933c; /* 4 5 6 */
   --purple: #b933ad; /* 7 */
-  --blue: #0f4fd6; /* A C E, a little brighter for screens */
+  --blue: var(--accent); /* A C E */
   --gray: #a7a9ac; /* L */
 
   /* The same hues, dark enough to read as text on this theme's surfaces. */
@@ -65,8 +69,9 @@
   --color-on-sign: var(--on-sign);
   --color-sign-muted: var(--sign-muted);
   --color-sign-rule: var(--sign-rule);
-  --color-yellow: var(--yellow);
-  --color-yellow-edge: var(--yellow-edge);
+  --color-accent: var(--accent);
+  --color-accent-edge: var(--accent-edge);
+  --color-on-accent: var(--on-accent);
   --color-orange: var(--orange);
   --color-red: var(--red);
   --color-green: var(--green);
@@ -117,8 +122,8 @@ body {
 }
 
 ::selection {
-  background: var(--yellow);
-  color: #000;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 :focus-visible {
@@ -126,7 +131,7 @@ body {
   outline-offset: 2px;
 }
 .sign :focus-visible {
-  outline-color: var(--yellow);
+  outline-color: #fff;
 }
 
 @layer components {
@@ -286,7 +291,7 @@ body {
     background: linear-gradient(
       to bottom,
       transparent,
-      rgb(252 204 10 / 0.45) 85%,
+      rgb(90 140 255 / 0.5) 85%,
       rgb(255 255 255 / 0.9)
     );
     animation: scan 1.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;

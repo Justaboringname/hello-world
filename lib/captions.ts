@@ -12,7 +12,7 @@ export const DAILY_GENERATION_LIMIT = 10;
 
 // The voice the AI writes in. `instruction` goes into the saved prompt.
 // `bullet` is how the vibe is marked in the UI: each one rides a real line
-// (the M is orange, the L grey, the 1 red and the N yellow).
+// (the M is orange, the L grey, the 1 red and the A blue).
 export const VIBES = {
   midwest: {
     label: "Midwest culture shock",
@@ -41,7 +41,7 @@ export const VIBES = {
   newyorker: {
     label: "Jaded New Yorker",
     emoji: "🗽",
-    bullet: { glyph: "N", color: "yellow" },
+    bullet: { glyph: "A", color: "blue" },
     blurb: "Seen it all, impressed by none of it",
     instruction:
       "a born-and-raised New Yorker who has seen it all. Deadpan, unimpressed, brutally efficient, a little rude but never mean.",

@@ -319,11 +319,13 @@ looks like the subway. No routes, data or rules changed.
 
 - **Sign bands and route bullets.** The header is a black sign band with the
   thin white line real signs carry. Each section rides its own line, and the
-  letters are the real ones: the **R** (Rate) is yellow, the **B** (Beat the
-  bot) orange, the **C** (Create) blue. On phones the bullets alone are the
-  navigation. The four vibes got bullets too: the M is orange, the L grey, the
-  1 red (Columbia's train) and the N yellow. Ranks 1 to 3 are red and 4 to 5
-  green, like the trains with those numbers.
+  letters keep their real colors where they can: the **B** (Beat the bot) is
+  orange and the **C** (Create) blue, and the **R** (Rate) takes green, the
+  color of an upvote. On phones the bullets alone are the navigation. The four
+  vibes got bullets too: the M is orange, the L grey, the 1 red (Columbia's
+  train) and the A blue. Ranks 1 to 3 are red and 4 to 5 green, like the
+  trains with those numbers. The brand color, on buttons and the logo, is a
+  bright sky blue with dark text on it, the same in both themes.
 - **Two voices in type.** Archivo carries the interface; squeezed to its
   narrowest width and set in caps (`.display`) it is the poster voice for
   titles. Captions, the jokes themselves, are set in an italic Caslon
@@ -335,7 +337,7 @@ looks like the subway. No routes, data or rules changed.
   button. Votes still update first and then settle on the server's totals.
 - **The home page shows the product.** The hero plays real photos from the
   feed, typing their three captions out one after another with the votes each
-  got. Under it, a yellow ribbon scrolls the best captions. When nobody has
+  got. Under it, a blue ribbon scrolls the best captions. When nobody has
   voted this week, the board shows the all-time favorites instead of an empty
   list.
 - **Waiting looks like work.** While the AI writes, the photo is scanned and

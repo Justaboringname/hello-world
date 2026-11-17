@@ -81,7 +81,7 @@ export default async function RatePage({ searchParams }: PageProps<"/rate">) {
       <div className="lg:grid lg:grid-cols-[17rem_minmax(0,40rem)] lg:justify-center lg:gap-14">
         {/* On wide screens the title, tabs and post buttons stay put while the feed scrolls. */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <PageHeader glyph="R" color="yellow" title="Rate">
+          <PageHeader glyph="R" color="green" title="Rate">
             Vote for the memes and AI captions that actually made you laugh.
           </PageHeader>
 
@@ -97,7 +97,7 @@ export default async function RatePage({ searchParams }: PageProps<"/rate">) {
               >
                 {RATE_TABS[key]}
                 {key === "new" && unratedCount ? (
-                  <Bullet color="yellow" className="text-[0.8rem]" label={`${unratedCount} new`}>
+                  <Bullet color="blue" className="text-[0.8rem]" label={`${unratedCount} new`}>
                     {unratedCount > 99 ? "99+" : unratedCount}
                   </Bullet>
                 ) : null}
