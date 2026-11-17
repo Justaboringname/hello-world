@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Confetti } from "@/components/confetti";
 import { CopyLinkButton } from "@/components/copy-link-button";
 
 // Shown once, right after posting (?posted=1), so the poster knows it worked
@@ -14,17 +15,21 @@ export function PostedBanner({ title, path }: { title: string; path: string }) {
   return (
     <div
       role="status"
-      className="flex flex-col gap-3 rounded-2xl border border-green-200 bg-green-50 p-4 text-green-950 sm:flex-row sm:items-center sm:justify-between dark:border-green-900 dark:bg-green-950/40 dark:text-green-100"
+      className="relative flex flex-col gap-4 overflow-hidden rounded-2xl bg-yellow p-5 text-black sm:flex-row sm:items-center sm:justify-between"
     >
-      <div>
-        <p className="font-semibold">🎉 {title}</p>
-        <p className="mt-0.5 text-sm text-green-800 dark:text-green-300">
+      <Confetti />
+      <div className="relative">
+        <p className="display text-[2.1rem]">{title}</p>
+        <p className="mt-1.5 max-w-md text-sm font-medium">
           It&apos;s in the feed now. Share the link so friends can vote, and check your
           Profile later to see how it&apos;s doing.
         </p>
       </div>
-      <div className="shrink-0">
-        <CopyLinkButton path={path} />
+      <div className="relative shrink-0">
+        <CopyLinkButton
+          path={path}
+          className="key inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-black px-5 py-2.5 font-semibold text-white shadow-[0_3px_0_rgb(0_0_0/0.35)]"
+        />
       </div>
     </div>
   );

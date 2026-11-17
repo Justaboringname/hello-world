@@ -9,7 +9,7 @@ export function ImageBackdrop({ src }: { src: string }) {
       alt=""
       aria-hidden
       loading="lazy"
-      className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl"
+      className="absolute inset-0 h-full w-full scale-110 object-cover opacity-55 blur-2xl"
     />
   );
 }

@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import { signInWithGoogle, signInWithPassword } from "@/app/auth/actions";
 import { Logo } from "@/components/logo";
+import { Page } from "@/components/page";
 import { SubmitButton } from "@/components/submit-button";
 import { devPasswordLoginEnabled, getViewer } from "@/lib/auth";
 import { firstParam, safeNextPath } from "@/lib/redirect";
 import { isProtected } from "@/lib/supabase/proxy";
+import { btnSecondary, errorText, field } from "@/lib/ui";
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
@@ -14,48 +16,54 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   if (await getViewer()) redirect(next);
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-12 font-sans">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-surface p-8 text-center shadow-sm dark:border-zinc-800">
-        <Logo className="mx-auto mb-4 h-12 w-12" />
-        <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
-        <p className="mt-2 text-sm text-zinc-500">
-          {isProtected(new URL(next, "http://x").pathname)
-            ? "That page is for signed-in users only."
-            : "Use your Google account to vote, post photos and see more memes."}
-        </p>
+    <Page width="max-w-md" className="flex items-center">
+      <div className="w-full overflow-hidden rounded-2xl border border-rule bg-surface">
+        <div className="sign sign-line flex items-center gap-4 px-6 pb-5 pt-7">
+          <Logo className="h-12 w-12 shrink-0" />
+          <h1 className="display text-[3rem]">Sign in</h1>
+        </div>
 
-        <form action={signInWithGoogle} className="mt-6">
-          <input type="hidden" name="next" value={next} />
-          <SubmitButton
-            pendingLabel="Redirecting to Google…"
-            className="flex w-full items-center justify-center gap-3 border border-zinc-300 bg-white px-5 py-2.5 text-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </SubmitButton>
-        </form>
+        <div className="p-6">
+          <p className="text-muted">
+            {isProtected(new URL(next, "http://x").pathname)
+              ? "That page is for signed-in users only."
+              : "Use your Google account to vote, post photos and see more memes."}
+          </p>
 
-        {devPasswordLoginEnabled() && (
-          <form action={signInWithPassword} className="mt-6 flex flex-col gap-2 border-t border-zinc-200 pt-6 text-left dark:border-zinc-800">
-            <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">
-              Local dev: email &amp; password
-            </p>
+          <form action={signInWithGoogle} className="mt-5">
             <input type="hidden" name="next" value={next} />
-            <input name="email" type="email" autoComplete="username" placeholder="Email" className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900" />
-            <input name="password" type="password" autoComplete="current-password" placeholder="Password" className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900" />
-            <SubmitButton pendingLabel="Signing in…" className="border border-zinc-300 px-5 py-2.5 dark:border-zinc-700">
-              Sign in with password
+            <SubmitButton pendingLabel="Redirecting to Google…" className={`${btnSecondary} w-full gap-3`}>
+              <GoogleIcon />
+              Continue with Google
             </SubmitButton>
           </form>
-        )}
 
-        {error && (
-          <p role="alert" className="mt-4 text-sm text-red-600">
-            Sign-in failed: {error}
-          </p>
-        )}
+          {devPasswordLoginEnabled() && (
+            <form action={signInWithPassword} className="mt-6 flex flex-col gap-1 border-t border-rule pt-5">
+              <p className="text-sm font-bold">Local dev: email and password</p>
+              <input type="hidden" name="next" value={next} />
+              <input name="email" type="email" autoComplete="username" placeholder="Email" className={field} />
+              <input
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="Password"
+                className={field}
+              />
+              <SubmitButton pendingLabel="Signing in…" className={`${btnSecondary} mt-3`}>
+                Sign in with password
+              </SubmitButton>
+            </form>
+          )}
+
+          {error && (
+            <p role="alert" className={`mt-4 ${errorText}`}>
+              Sign-in failed: {error}
+            </p>
+          )}
+        </div>
       </div>
-    </main>
+    </Page>
   );
 }
 

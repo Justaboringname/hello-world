@@ -10,6 +10,7 @@ import {
   type FormState,
 } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
+import { btnSecondary } from "@/lib/ui";
 
 // Uploads straight from the browser to Supabase Storage (no size limit from a
 // Server Function body), then asks the server to record the public URL.
@@ -61,15 +62,15 @@ export function AvatarUploader({ userId }: { userId: string }) {
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={pending}
-        className="w-fit rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-100 disabled:cursor-wait disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        className={`${btnSecondary} w-fit`}
       >
         {pending ? "Uploading…" : "Upload new photo"}
       </button>
-      <p className="text-xs text-zinc-500">PNG, JPEG, WebP or GIF, up to 5 MB.</p>
+      <p className="mt-1 text-xs text-muted">PNG, JPEG, WebP or GIF, up to 5 MB.</p>
       {state.message && (
         <p
           role="status"
-          className={state.status === "error" ? "text-sm text-red-600" : "text-sm text-green-600"}
+          className={`text-sm font-medium ${state.status === "error" ? "text-down" : "text-up"}`}
         >
           {state.message}
         </p>

@@ -7,10 +7,12 @@ export function Avatar({
   src,
   name,
   size = "sm",
+  className = "",
 }: {
   src: string | null | undefined;
   name: string;
   size?: keyof typeof sizes;
+  className?: string;
 }) {
   const initials =
     name
@@ -26,7 +28,7 @@ export function Avatar({
       <img
         src={src}
         alt={`${name}'s profile photo`}
-        className={`${sizes[size]} shrink-0 overflow-hidden rounded-full bg-zinc-200 object-cover dark:bg-zinc-800`}
+        className={`${sizes[size]} shrink-0 overflow-hidden rounded-full bg-raised object-cover ${className}`}
       />
     );
   }
@@ -34,7 +36,7 @@ export function Avatar({
   return (
     <span
       aria-hidden
-      className={`${sizes[size]} flex shrink-0 items-center justify-center rounded-full bg-zinc-200 font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300`}
+      className={`${sizes[size]} flex shrink-0 items-center justify-center rounded-full bg-yellow font-bold text-black ${className}`}
     >
       {initials}
     </span>

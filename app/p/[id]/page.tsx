@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Bullet } from "@/components/bullet";
 import { CopyLinkButton } from "@/components/copy-link-button";
 import { GenerationCard } from "@/components/generation-card";
+import { Page } from "@/components/page";
 import { PostedBanner } from "@/components/posted-banner";
+import { VibeBadge } from "@/components/vibe-badge";
 import { getViewer } from "@/lib/auth";
-import { vibeLabel } from "@/lib/captions";
 import { getGeneration, getMyVotes, photoUrl } from "@/lib/feed";
 import { firstParam } from "@/lib/redirect";
+import { btnPrimary, btnSecondary, textLink } from "@/lib/ui";
 
 function parseId(value: string) {
   return /^\d{1,15}$/.test(value) ? Number(value) : null;
@@ -44,14 +47,14 @@ export default async function GenerationPage({ params, searchParams }: PageProps
   const loginHref = `/login?next=${encodeURIComponent(`/p/${id}`)}`;
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 font-sans sm:py-12">
-      <Link href="/rate?tab=photos" className="text-sm text-zinc-500 hover:underline">
+    <Page>
+      <Link href="/rate?tab=photos" className="text-sm font-semibold text-muted hover:text-ink">
         &larr; All photos
       </Link>
 
       {posted && (
         <div className="mt-4">
-          <PostedBanner title="Your captions are ready!" path={`/p/${id}`} />
+          <PostedBanner title="Your captions are ready" path={`/p/${id}`} />
         </div>
       )}
 
@@ -62,51 +65,51 @@ export default async function GenerationPage({ params, searchParams }: PageProps
           signedIn={Boolean(viewer)}
           loginHref={loginHref}
           linkToDetail={false}
+          reveal={posted}
         />
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        {!posted && <CopyLinkButton path={`/p/${id}`} />}
-        <Link
-          href={`/duel?photo=${id}`}
-          className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-        >
-          🤖 Beat the bot on this photo
+      <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-4">
+        <Link href={`/duel?photo=${id}`} className={btnPrimary}>
+          <Bullet color="orange" className="text-[0.95rem]">
+            B
+          </Bullet>
+          Beat the bot on this photo
         </Link>
-        <Link
-          href="/create"
-          className="rounded-full border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
+        {!posted && <CopyLinkButton path={`/p/${id}`} />}
+        <Link href="/create" className={btnSecondary}>
           Caption your own photo
         </Link>
         {viewer ? (
-          <Link href="/rate?tab=new" className="text-sm text-blue-600 hover:underline">
-            Rate more &rarr;
+          <Link href="/rate?tab=new" className={`${textLink} ml-1 text-sm`}>
+            Rate more
           </Link>
         ) : (
-          <Link href={loginHref} className="text-sm text-blue-600 hover:underline">
+          <Link href={loginHref} className={`${textLink} ml-1 text-sm`}>
             Sign in to vote
           </Link>
         )}
       </div>
 
-      <details className="mt-10 rounded-2xl border border-zinc-200 bg-surface p-4 text-sm dark:border-zinc-800">
-        <summary className="cursor-pointer font-medium">How these captions were made</summary>
-        <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-          <dt className="text-zinc-500">Model</dt>
-          <dd className="font-mono">{generation.model}</dd>
-          <dt className="text-zinc-500">Vibe</dt>
-          <dd>{vibeLabel(generation.vibe)}</dd>
+      <details className="group mt-10 rounded-2xl border border-rule bg-surface px-5 py-4 text-sm">
+        <summary className="cursor-pointer font-bold">How these captions were made</summary>
+        <dl className="mt-4 grid grid-cols-[auto_1fr] items-center gap-x-5 gap-y-2.5">
+          <dt className="text-muted">Model</dt>
+          <dd className="font-mono text-[0.8rem]">{generation.model}</dd>
+          <dt className="text-muted">Vibe</dt>
+          <dd>
+            <VibeBadge vibe={generation.vibe} />
+          </dd>
         </dl>
-        <h3 className="mt-4 font-medium">System prompt</h3>
-        <pre className="mt-1 whitespace-pre-wrap rounded-lg bg-zinc-100 p-3 font-mono text-xs dark:bg-zinc-900">
+        <h3 className="mt-5 font-bold">System prompt</h3>
+        <pre className="mt-1.5 whitespace-pre-wrap rounded-xl bg-raised p-3.5 font-mono text-xs leading-relaxed">
           {generation.system_prompt}
         </pre>
-        <h3 className="mt-4 font-medium">Prompt (sent with the photo)</h3>
-        <pre className="mt-1 whitespace-pre-wrap rounded-lg bg-zinc-100 p-3 font-mono text-xs dark:bg-zinc-900">
+        <h3 className="mt-5 font-bold">Prompt (sent with the photo)</h3>
+        <pre className="mt-1.5 whitespace-pre-wrap rounded-xl bg-raised p-3.5 font-mono text-xs leading-relaxed">
           {generation.prompt}
         </pre>
       </details>
-    </main>
+    </Page>
   );
 }

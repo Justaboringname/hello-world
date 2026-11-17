@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
-/* The page is a soft grey canvas; cards and panels sit on it in `surface`. */
+/* Design tokens. The look borrows from the New York subway: black sign bands,
+   route bullets in the lines' own colors, and white station tile. Captions
+   (the jokes) are set like a cartoon caption contest, in an italic Caslon. */
 :root {
-  --background: #f6f6f8;
-  --foreground: #18181b;
+  color-scheme: light dark;
+
+  /* Station tile: the light theme. */
+  --canvas: #efeeea;
   --surface: #ffffff;
+  --raised: #f5f4f0;
+  --ink: #131110;
+  --muted: #645e58;
+  --rule: #d8d4cc;
+
+  /* The sign band (header, boards) is black in both themes. */
+  --sign: #131110;
+  --on-sign: #ffffff;
+  --sign-muted: #b9b2ab;
+  --sign-rule: #3a3531;
+
+  /* Subway line colors, used as fills. */
+  --yellow: #fccc0a; /* N Q R W */
+  --yellow-edge: #b38f00;
+  --orange: #ff6319; /* B D F M */
+  --red: #ee352e; /* 1 2 3 */
+  --green: #00933c; /* 4 5 6 */
+  --purple: #b933ad; /* 7 */
+  --blue: #0f4fd6; /* A C E, a little brighter for screens */
+  --gray: #a7a9ac; /* L */
+
+  /* The same hues, dark enough to read as text on this theme's surfaces. */
+  --up: #00782f;
+  --down: #cc241e;
+  --bot: #9a2690;
+  --you: #c23f00;
+}
+
+/* The platform at night: warm black, never blue-black. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #0f0d0c;
+    --surface: #1a1715;
+    --raised: #25211e;
+    --ink: #f6f2ec;
+    --muted: #a8a098;
+    --rule: #38322e;
+    --sign: #000000;
+    --up: #3fd47a;
+    --down: #ff6a61;
+    --bot: #e877dd;
+    --you: #ff8b52;
+  }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
   --color-surface: var(--surface);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #09090b;
-    --foreground: #ededed;
-    --surface: #131316;
-  }
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-sign: var(--sign);
+  --color-on-sign: var(--on-sign);
+  --color-sign-muted: var(--sign-muted);
+  --color-sign-rule: var(--sign-rule);
+  --color-yellow: var(--yellow);
+  --color-yellow-edge: var(--yellow-edge);
+  --color-orange: var(--orange);
+  --color-red: var(--red);
+  --color-green: var(--green);
+  --color-purple: var(--purple);
+  --color-blue: var(--blue);
+  --color-gray: var(--gray);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-bot: var(--bot);
+  --color-you: var(--you);
+  --font-sans: var(--font-archivo), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: var(--font-caslon), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* Scale the whole UI up on big screens, like zooming the browser: every
@@ -51,10 +110,417 @@ html {
   }
 }
 
-/* Geist everywhere, including the header and footer (which sit outside the
-   pages' <main>). */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-archivo), "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+::selection {
+  background: var(--yellow);
+  color: #000;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.sign :focus-visible {
+  outline-color: var(--yellow);
+}
+
+@layer components {
+  /* Poster type: Archivo squeezed to its narrowest width, in caps, the way
+     bodega awnings and gig posters are lettered. */
+  .display {
+    font-stretch: 62%;
+    font-weight: 800;
+    line-height: 0.92;
+    letter-spacing: -0.005em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  /* A caption: the joke itself. */
+  .joke {
+    font-family: var(--font-caslon), Georgia, "Times New Roman", serif;
+    font-style: italic;
+    line-height: 1.32;
+    text-wrap: pretty;
+  }
+
+  /* A subway route bullet. Set --b (fill) and --bt (glyph). */
+  .bullet {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 1.65em;
+    height: 1.65em;
+    border-radius: 9999px;
+    background: var(--b, var(--ink));
+    color: var(--bt, #fff);
+    font-stretch: 100%;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 0.86em;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  /* The black sign band, with the thin white line real signs carry near the
+     top edge. */
+  .sign {
+    position: relative;
+    background: var(--sign);
+    color: var(--on-sign);
+  }
+  .sign-line::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0.3rem;
+    height: 1.5px;
+    background: rgb(255 255 255 / 0.82);
+    pointer-events: none;
+  }
+
+  /* White subway tile in running bond, very faint, behind the home hero. */
+  .tile {
+    background-image: var(--tile-img);
+    background-size: 5rem 5rem;
+    mask-image: linear-gradient(to bottom, #000 40%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent);
+  }
+
+  /* Buttons press like keys: a hard edge underneath that the button sinks
+     into. */
+  .key {
+    transition:
+      transform 90ms ease-out,
+      box-shadow 90ms ease-out,
+      background-color 120ms,
+      border-color 120ms,
+      filter 120ms;
+  }
+  .key:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: none;
+  }
+
+  /* Hero lines rise out of a mask, one after another. */
+  .rise {
+    display: block;
+    overflow: hidden;
+    padding-top: 0.06em;
+  }
+  .rise > span {
+    display: block;
+    animation: rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  .fade-up {
+    animation: fade-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  /* The caret after text that is being typed. */
+  .caret::after {
+    content: "";
+    display: inline-block;
+    width: 0.08em;
+    min-width: 2px;
+    height: 0.95em;
+    margin-left: 0.08em;
+    vertical-align: -0.1em;
+    background: currentColor;
+    animation: blink 0.9s steps(1) infinite;
+  }
+
+  /* "HA!" (or "meh") popping out of a vote button. */
+  .ha {
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    pointer-events: none;
+    font-stretch: 62%;
+    font-weight: 800;
+    font-size: 1.15rem;
+    line-height: 1;
+    white-space: nowrap;
+    animation: ha 0.75s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+
+  /* A number that just changed rolls into place. */
+  .roll {
+    display: inline-block;
+    animation: roll 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .pop {
+    animation: pop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  /* Bars that fill from their starting edge. */
+  .grow-x {
+    transform-origin: var(--origin, left) center;
+    animation: grow-x 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  /* Text that appears left to right, as if printed. */
+  .print {
+    animation: print 0.9s steps(40, end) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  /* A light bar sweeping down a photo while the AI reads it. */
+  .scan::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: -35%;
+    height: 35%;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(252 204 10 / 0.45) 85%,
+      rgb(255 255 255 / 0.9)
+    );
+    animation: scan 1.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .shimmer {
+    background: linear-gradient(
+        100deg,
+        transparent 30%,
+        color-mix(in srgb, var(--surface) 70%, transparent) 50%,
+        transparent 70%
+      )
+      var(--rule);
+    background-size: 200% 100%;
+    animation: shimmer 1.3s linear infinite;
+  }
+
+  /* The scrolling ribbon of captions. The track holds the list twice. */
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: ticker var(--ticker-duration, 60s) linear infinite;
+  }
+  .ticker:hover .ticker-track {
+    animation-play-state: paused;
+  }
+
+  /* Route-colored dots thrown from the middle of their box. */
+  .confetti {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .confetti i {
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 9999px;
+    background: var(--c);
+    animation: confetti 1.3s cubic-bezier(0.12, 0.7, 0.3, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  /* Two cards trading places while the judge reads them blind. */
+  .shuffle-a {
+    animation: shuffle-a 1.5s cubic-bezier(0.5, 0, 0.3, 1) infinite;
+  }
+  .shuffle-b {
+    animation: shuffle-b 1.5s cubic-bezier(0.5, 0, 0.3, 1) infinite;
+  }
+}
+
+:root {
+  --tile-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='none' stroke='%23131110' stroke-opacity='.09'%3E%3Cpath d='M0 .5h80M0 40.5h80M.5 0v40M40.5 40v40'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tile-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='none' stroke='%23f6f2ec' stroke-opacity='.07'%3E%3Cpath d='M0 .5h80M0 40.5h80M.5 0v40M40.5 40v40'/%3E%3C/svg%3E");
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(108%);
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes ha {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0.4rem) scale(0.5) rotate(-10deg);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -0.3rem) scale(1.2) rotate(-4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -2.2rem) scale(1) rotate(7deg);
+  }
+}
+@keyframes roll {
+  from {
+    opacity: 0;
+    transform: translateY(45%);
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes print {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes scan {
+  to {
+    top: 100%;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes confetti {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1);
+  }
+}
+@keyframes shuffle-a {
+  0%,
+  100% {
+    transform: translateX(0) rotate(-3deg);
+    z-index: 1;
+  }
+  50% {
+    transform: translateX(105%) rotate(3deg);
+    z-index: 0;
+  }
+}
+@keyframes shuffle-b {
+  0%,
+  100% {
+    transform: translateX(0) rotate(3deg);
+    z-index: 0;
+  }
+  50% {
+    transform: translateX(-105%) rotate(-3deg);
+    z-index: 1;
+  }
+}
+
+/* View transitions (React <ViewTransition>). A photo you open morphs from its
+   place in the feed into its own page; everything else crossfades. */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+::view-transition-old(.page-exit) {
+  animation: 120ms ease-in both vt-fade reverse;
+}
+::view-transition-new(.page-enter) {
+  animation:
+    240ms ease-out 90ms both vt-fade,
+    340ms cubic-bezier(0.2, 0.7, 0.2, 1) 90ms both vt-rise;
+}
+::view-transition-group(.morph) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.1, 1);
+}
+@keyframes vt-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-rise {
+  from {
+    translate: 0 0.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .ticker-track,
+  .scan::after,
+  .shuffle-a,
+  .shuffle-b {
+    animation: none !important;
+  }
+  .ha,
+  .confetti {
+    display: none;
+  }
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }

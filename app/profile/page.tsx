@@ -1,13 +1,17 @@
 import Link from "next/link";
+import { ViewTransition } from "react";
 import { updateProfile } from "@/app/profile/actions";
 import { Avatar } from "@/components/avatar";
 import { AvatarUploader } from "@/components/avatar-uploader";
+import { ThumbUp } from "@/components/icons";
 import { NameForm } from "@/components/name-form";
+import { Page } from "@/components/page";
 import { UnfinishedDuels } from "@/components/unfinished-duels";
 import { requireViewer } from "@/lib/auth";
 import { getMyUnfinishedDuels } from "@/lib/duels";
 import { getMyPosts, memeImageUrl, photoUrl, type FeedItem } from "@/lib/feed";
 import { timeAgo } from "@/lib/time";
+import { btnPrimary, btnSecondary, card, textLink } from "@/lib/ui";
 
 // How many of your posts the grid shows; the stats count all of them.
 const GRID_SIZE = 24;
@@ -21,8 +25,9 @@ function postSummary(item: FeedItem) {
       key: `photo-${generation.id}`,
       href: `/p/${generation.id}`,
       src: photoUrl(generation.image_path),
-      label: "📸 AI captions",
+      label: "AI captions",
       title: best?.text ?? generation.location ?? "Photo",
+      isCaption: Boolean(best),
       upvotes: generation.captions.reduce((sum, caption) => sum + caption.upvotes, 0),
       createdAt: generation.created_at,
     };
@@ -32,8 +37,9 @@ function postSummary(item: FeedItem) {
     key: `meme-${meme.id}`,
     href: `/m/${meme.id}`,
     src: memeImageUrl(meme),
-    label: "😂 Meme",
+    label: "Meme",
     title: meme.title,
+    isCaption: false,
     upvotes: meme.upvotes,
     createdAt: meme.created_at,
   };
@@ -55,91 +61,85 @@ export default async function ProfilePage() {
   const upvotes = posts.reduce((sum, post) => sum + post.upvotes, 0);
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 font-sans sm:py-12">
-      <section className="flex flex-col items-center gap-5 rounded-2xl border border-zinc-200 bg-surface p-6 text-center shadow-sm sm:flex-row sm:text-left dark:border-zinc-800">
-        <Avatar src={profile?.avatar_url} name={name} size="lg" />
+    <Page width="max-w-3xl">
+      <section className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
+        <Avatar src={profile?.avatar_url} name={name} size="lg" className="ring-4 ring-yellow" />
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{name || "Your profile"}</h1>
-          <p className="truncate text-sm text-zinc-500">{viewer.email}</p>
-          <dl className="mt-4 flex justify-center gap-6 sm:justify-start">
-            <div>
-              <dt className="text-xs uppercase tracking-wider text-zinc-500">Posts</dt>
-              <dd className="text-2xl font-semibold tabular-nums">{posts.length}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wider text-zinc-500">👍 received</dt>
-              <dd className="text-2xl font-semibold tabular-nums">{upvotes}</dd>
-            </div>
-          </dl>
+          <h1 className="display text-[2.8rem] sm:text-[3.4rem]">{name || "Your profile"}</h1>
+          <p className="mt-1 truncate text-muted">{viewer.email}</p>
         </div>
+        <dl className="flex gap-3">
+          <div className={`${card} min-w-28 px-5 py-3 text-center`}>
+            <dd className="display text-[2.6rem] tabular-nums">{posts.length}</dd>
+            <dt className="text-sm text-muted">{posts.length === 1 ? "post" : "posts"}</dt>
+          </div>
+          <div className={`${card} min-w-28 px-5 py-3 text-center`}>
+            <dd className="display text-[2.6rem] tabular-nums text-up">{upvotes}</dd>
+            <dt className="text-sm text-muted">{upvotes === 1 ? "upvote" : "upvotes"} received</dt>
+          </div>
+        </dl>
       </section>
 
       {unfinished.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-8">
           <UnfinishedDuels duels={unfinished} title="Your unfinished duels" />
         </div>
       )}
 
-      <section className="mt-10">
+      <section className="mt-12">
         <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-lg font-semibold">Your posts</h2>
+          <h2 className="display text-[2.1rem]">Your posts</h2>
           {posts.length > 0 && (
-            <Link href="/create" className="text-sm text-blue-600 hover:underline">
-              + Post something
+            <Link href="/create" className={`${textLink} text-sm`}>
+              Post something
             </Link>
           )}
         </div>
         {myPosts.error ? (
-          <p className="mt-3 text-sm text-red-600">
+          <p className="mt-3 font-medium text-down">
             Couldn&apos;t load your posts: {myPosts.error.message}
           </p>
         ) : posts.length === 0 ? (
-          <div className="mt-3 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-zinc-300 bg-surface p-8 text-center dark:border-zinc-700">
-            <p className="font-medium">You haven&apos;t posted anything yet.</p>
-            <p className="max-w-sm text-sm text-zinc-500">
+          <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl border-[1.5px] border-dashed border-rule bg-surface p-7">
+            <p className="text-[1.1rem] font-bold">You haven&apos;t posted anything yet</p>
+            <p className="max-w-sm text-muted">
               Your memes and captioned photos show up here, with how many upvotes
               each one gets.
             </p>
-            <div className="mt-1 flex flex-wrap justify-center gap-2">
-              <Link
-                href="/create?mode=meme"
-                className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-              >
+            <div className="mt-2 flex flex-wrap gap-3">
+              <Link href="/create?mode=meme" className={btnPrimary}>
                 Make a meme
               </Link>
-              <Link
-                href="/create"
-                className="rounded-full border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-              >
+              <Link href="/create" className={btnSecondary}>
                 Caption a photo with AI
               </Link>
             </div>
           </div>
         ) : (
           <>
-            <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
               {posts.slice(0, GRID_SIZE).map((post) => (
                 <li key={post.key}>
                   <Link
                     href={post.href}
-                    className="group block overflow-hidden rounded-xl border border-zinc-200 bg-surface shadow-sm transition hover:shadow-md dark:border-zinc-800"
+                    className={`${card} group block overflow-hidden transition-colors hover:border-ink`}
                   >
-                    <span className="relative block aspect-square overflow-hidden bg-zinc-900">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={post.src}
-                        alt=""
-                        loading="lazy"
-                        className="h-full w-full object-cover transition group-hover:scale-105"
-                      />
-                      <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-900 shadow-sm">
-                        👍 {post.upvotes}
+                    <span className="relative block aspect-square overflow-hidden bg-black">
+                      <ViewTransition name={post.key} share="morph" default="none">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={post.src} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      </ViewTransition>
+                      <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/80 px-2.5 py-1 text-xs font-bold tabular-nums text-white">
+                        <ThumbUp />
+                        {post.upvotes}
                       </span>
                     </span>
-                    <span className="block px-3 py-2">
-                      <span className="block truncate text-sm font-medium">{post.title}</span>
-                      <span className="block truncate text-xs text-zinc-500">
-                        {post.label} · {timeAgo(post.createdAt)}
+                    <span className="block px-3.5 py-2.5">
+                      <span className={`block truncate ${post.isCaption ? "joke" : "text-sm font-bold"}`}>
+                        {post.isCaption ? `“${post.title}”` : post.title}
+                      </span>
+                      <span className="block truncate text-xs text-muted">
+                        {post.label}, {timeAgo(post.createdAt)}
                       </span>
                     </span>
                   </Link>
@@ -147,7 +147,7 @@ export default async function ProfilePage() {
               ))}
             </ul>
             {posts.length > GRID_SIZE && (
-              <p className="mt-3 text-sm text-zinc-500">
+              <p className="mt-3 text-sm text-muted">
                 Showing your {GRID_SIZE} newest of {posts.length} posts.
               </p>
             )}
@@ -155,18 +155,18 @@ export default async function ProfilePage() {
         )}
       </section>
 
-      <h2 className="mt-12 text-lg font-semibold">Settings</h2>
-      <section className="mt-3 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm dark:border-zinc-800">
-        <h3 className="font-semibold">Photo</h3>
+      <h2 className="display mt-14 text-[2.1rem]">Settings</h2>
+      <section className={`${card} mt-4 p-6`}>
+        <h3 className="font-bold">Photo</h3>
         <div className="mt-4 flex items-center gap-6">
           <Avatar src={profile?.avatar_url} name={name} size="lg" />
           <AvatarUploader userId={viewer.userId} />
         </div>
       </section>
 
-      <section className="mt-4 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm dark:border-zinc-800">
-        <h3 className="font-semibold">Name</h3>
-        <p className="mt-1 text-sm text-zinc-500">
+      <section className={`${card} mt-4 p-6`}>
+        <h3 className="font-bold">Name</h3>
+        <p className="mt-1 text-sm text-muted">
           Your posts show your first name and last initial.
         </p>
         <div className="mt-4">
@@ -178,6 +178,6 @@ export default async function ProfilePage() {
           />
         </div>
       </section>
-    </main>
+    </Page>
   );
 }

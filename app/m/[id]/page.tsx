@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyLinkButton } from "@/components/copy-link-button";
+import { Lock } from "@/components/icons";
 import { MemeCard } from "@/components/meme-card";
+import { Page } from "@/components/page";
 import { PostedBanner } from "@/components/posted-banner";
 import { getViewer } from "@/lib/auth";
 import { getMeme, getMyMemeVotes, memeImageUrl } from "@/lib/feed";
 import { firstParam } from "@/lib/redirect";
+import { btnPrimary, textLink } from "@/lib/ui";
 
 function parseId(value: string) {
   return /^\d{1,15}$/.test(value) ? Number(value) : null;
@@ -39,37 +42,32 @@ export default async function MemePage({ params, searchParams }: PageProps<"/m/[
     // link to one looks missing until they sign in.
     if (viewer) notFound();
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-12 font-sans">
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-blue-300 bg-blue-50 p-10 text-center dark:border-blue-900 dark:bg-blue-950/30">
-          <p className="text-4xl" aria-hidden>
-            🔒
-          </p>
-          <h1 className="text-xl font-semibold">This meme is for members</h1>
-          <p className="max-w-sm text-sm text-zinc-600 dark:text-zinc-400">
+      <Page className="flex items-center">
+        <div className="sign sign-line flex w-full flex-col items-center gap-3 rounded-2xl px-6 pb-10 pt-12 text-center">
+          <Lock className="h-9 w-9" />
+          <h1 className="display text-[2.6rem]">This meme is for members</h1>
+          <p className="max-w-sm text-sign-muted">
             Sign in with Google to see it, or it may have been removed.
           </p>
-          <Link
-            href={loginHref}
-            className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-          >
+          <Link href={loginHref} className={`${btnPrimary} mt-3`}>
             Sign in with Google
           </Link>
         </div>
-      </main>
+      </Page>
     );
   }
 
   const votes = await getMyMemeVotes(viewer?.userId, [meme.id]);
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 font-sans sm:py-12">
-      <Link href="/rate?tab=memes" className="text-sm text-zinc-500 hover:underline">
+    <Page>
+      <Link href="/rate?tab=memes" className="text-sm font-semibold text-muted hover:text-ink">
         &larr; All memes
       </Link>
 
       {posted && (
         <div className="mt-4">
-          <PostedBanner title="Your meme is live!" path={path} />
+          <PostedBanner title="Your meme is live" path={path} />
         </div>
       )}
 
@@ -83,18 +81,15 @@ export default async function MemePage({ params, searchParams }: PageProps<"/m/[
         />
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        {!posted && <CopyLinkButton path={path} title={meme.title} />}
-        <Link
-          href="/create?mode=meme"
-          className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-        >
+      <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-4">
+        <Link href="/create?mode=meme" className={btnPrimary}>
           Make your own meme
         </Link>
-        <Link href="/rate?tab=new" className="text-sm text-blue-600 hover:underline">
-          Rate more &rarr;
+        {!posted && <CopyLinkButton path={path} title={meme.title} />}
+        <Link href="/rate?tab=new" className={`${textLink} ml-1 text-sm`}>
+          Rate more
         </Link>
       </div>
-    </main>
+    </Page>
   );
 }
